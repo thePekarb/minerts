@@ -1,0 +1,247 @@
+[gd_scene load_steps=7 format=3]
+
+[ext_resource type="Script" path="res://scripts/ui/HUD.gd" id="1_hud"]
+[ext_resource type="PackedScene" path="res://scenes/ui/SelectionBox.tscn" id="2_box"]
+[ext_resource type="PackedScene" path="res://scenes/ui/Minimap.tscn" id="3_map"]
+[ext_resource type="PackedScene" path="res://scenes/ui/FloatingBadge.tscn" id="4_badge"]
+
+[sub_resource type="StyleBoxFlat" id="StyleBoxFlat_dark"]
+bg_color = Color(0.08, 0.1, 0.14, 0.88)
+border_width_left = 1
+border_width_top = 1
+border_width_right = 1
+border_width_bottom = 1
+border_color = Color(0.2, 0.28, 0.38, 0.6)
+corner_radius_top_left = 6
+corner_radius_top_right = 6
+corner_radius_bottom_right = 6
+corner_radius_bottom_left = 6
+
+[sub_resource type="StyleBoxFlat" id="StyleBoxFlat_banner"]
+bg_color = Color(0.8, 0.15, 0.15, 0.9)
+border_width_left = 2
+border_width_top = 2
+border_width_right = 2
+border_width_bottom = 2
+border_color = Color(1, 0.8, 0.2, 0.9)
+corner_radius_top_left = 8
+corner_radius_top_right = 8
+corner_radius_bottom_right = 8
+corner_radius_bottom_left = 8
+
+[node name="HUD" type="Control"]
+layout_mode = 3
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+mouse_filter = 2
+script = ExtResource("1_hud")
+
+[node name="TopBar" type="PanelContainer" parent="."]
+layout_mode = 1
+anchors_preset = 10
+anchor_right = 1.0
+offset_left = 12.0
+offset_top = 12.0
+offset_right = -12.0
+offset_bottom = 48.0
+grow_horizontal = 2
+theme_override_styles/panel = SubResource("StyleBoxFlat_dark")
+
+[node name="HBox" type="HBoxContainer" parent="TopBar"]
+layout_mode = 2
+theme_override_constants/separation = 24
+alignment = 1
+
+[node name="WoodLabel" type="Label" parent="TopBar/HBox"]
+layout_mode = 2
+text = "🪵 50"
+
+[node name="StoneLabel" type="Label" parent="TopBar/HBox"]
+layout_mode = 2
+text = "🪨 20"
+
+[node name="FoodLabel" type="Label" parent="TopBar/HBox"]
+layout_mode = 2
+text = "🍞 30"
+
+[node name="OreLabel" type="Label" parent="TopBar/HBox"]
+layout_mode = 2
+text = "✨ 0"
+
+[node name="PopLabel" type="Label" parent="TopBar/HBox"]
+layout_mode = 2
+text = "👥 3 / 10"
+
+[node name="DayLabel" type="Label" parent="TopBar/HBox"]
+layout_mode = 2
+text = "☀️ Day 1"
+
+[node name="TimeLabel" type="Label" parent="TopBar/HBox"]
+layout_mode = 2
+text = "⏰ 08:24"
+
+[node name="Banner" type="PanelContainer" parent="."]
+visible = false
+layout_mode = 1
+anchors_preset = 5
+anchor_left = 0.5
+anchor_right = 0.5
+offset_left = -200.0
+offset_top = 60.0
+offset_right = 200.0
+offset_bottom = 100.0
+grow_horizontal = 2
+theme_override_styles/panel = SubResource("StyleBoxFlat_banner")
+
+[node name="BannerLabel" type="Label" parent="Banner"]
+layout_mode = 2
+text = "Night approaches! Defensive horn sounded!"
+horizontal_alignment = 1
+vertical_alignment = 1
+
+[node name="BuildDock" type="PanelContainer" parent="."]
+layout_mode = 1
+anchors_preset = 11
+anchor_left = 1.0
+anchor_right = 1.0
+anchor_bottom = 0.0
+offset_left = -168.0
+offset_top = 60.0
+offset_right = -12.0
+offset_bottom = 60.0
+grow_horizontal = 0
+grow_vertical = 1
+theme_override_styles/panel = SubResource("StyleBoxFlat_dark")
+
+[node name="VBox" type="VBoxContainer" parent="BuildDock"]
+layout_mode = 2
+theme_override_constants/separation = 8
+
+[node name="Title" type="Label" parent="BuildDock/VBox"]
+layout_mode = 2
+text = "🏗️ Buildings"
+horizontal_alignment = 1
+
+[node name="GridContainer" type="GridContainer" parent="BuildDock/VBox"]
+layout_mode = 2
+columns = 2
+
+[node name="HSeparator" type="HSeparator" parent="BuildDock/VBox"]
+layout_mode = 2
+
+[node name="AxeToolBtn" type="Button" parent="BuildDock/VBox"]
+custom_minimum_size = Vector2(0, 36)
+layout_mode = 2
+text = "🪓 Lumber Zone"
+
+[node name="Inspector" type="PanelContainer" parent="."]
+visible = false
+layout_mode = 1
+anchors_preset = 7
+anchor_left = 0.5
+anchor_top = 1.0
+anchor_right = 0.5
+anchor_bottom = 1.0
+offset_left = -220.0
+offset_top = -120.0
+offset_right = 220.0
+offset_bottom = -16.0
+grow_horizontal = 2
+grow_vertical = 0
+theme_override_styles/panel = SubResource("StyleBoxFlat_dark")
+
+[node name="VBox" type="VBoxContainer" parent="Inspector"]
+layout_mode = 2
+theme_override_constants/separation = 6
+
+[node name="TitleLabel" type="Label" parent="Inspector/VBox"]
+layout_mode = 2
+text = "Selected Object"
+horizontal_alignment = 1
+
+[node name="SubtitleLabel" type="Label" parent="Inspector/VBox"]
+layout_mode = 2
+theme_override_colors/font_color = Color(0.75, 0.8, 0.85, 1)
+text = "Stats and Info"
+horizontal_alignment = 1
+
+[node name="HealthBar" type="ProgressBar" parent="Inspector/VBox"]
+custom_minimum_size = Vector2(0, 12)
+layout_mode = 2
+value = 100.0
+show_percentage = false
+
+[node name="ActionBox" type="HFlowContainer" parent="Inspector/VBox"]
+layout_mode = 2
+theme_override_constants/separation = 8
+alignment = 1
+
+[node name="GateBtn" type="Button" parent="Inspector/VBox/ActionBox"]
+visible = false
+layout_mode = 2
+text = "🚪 Gate: Open [O]"
+
+[node name="MineStepper" type="HBoxContainer" parent="Inspector/VBox/ActionBox"]
+visible = false
+layout_mode = 2
+theme_override_constants/separation = 6
+
+[node name="MineMinusBtn" type="Button" parent="Inspector/VBox/ActionBox/MineStepper"]
+custom_minimum_size = Vector2(28, 24)
+layout_mode = 2
+text = "-"
+
+[node name="MineCountLbl" type="Label" parent="Inspector/VBox/ActionBox/MineStepper"]
+layout_mode = 2
+text = "Miners: 0 / 4"
+
+[node name="MinePlusBtn" type="Button" parent="Inspector/VBox/ActionBox/MineStepper"]
+custom_minimum_size = Vector2(28, 24)
+layout_mode = 2
+text = "+"
+
+[node name="MineUpgradeBtn" type="Button" parent="Inspector/VBox/ActionBox"]
+visible = false
+layout_mode = 2
+text = "Upgrade to Deep Mine"
+
+[node name="MineEjectBtn" type="Button" parent="Inspector/VBox/ActionBox"]
+visible = false
+layout_mode = 2
+text = "Eject All"
+
+[node name="TrainWorkerBtn" type="Button" parent="Inspector/VBox/ActionBox"]
+visible = false
+layout_mode = 2
+text = "+ Worker (20 F)"
+
+[node name="TrainWarriorBtn" type="Button" parent="Inspector/VBox/ActionBox"]
+visible = false
+layout_mode = 2
+text = "+ Warrior (30 F, 15 W)"
+
+[node name="TrainArcherBtn" type="Button" parent="Inspector/VBox/ActionBox"]
+visible = false
+layout_mode = 2
+text = "+ Archer (25 F, 20 W)"
+
+[node name="Minimap" parent="." instance=ExtResource("3_map")]
+layout_mode = 1
+anchors_preset = 2
+anchor_top = 1.0
+anchor_bottom = 1.0
+offset_left = 16.0
+offset_top = -176.0
+offset_right = 176.0
+offset_bottom = -16.0
+grow_vertical = 0
+
+[node name="SelectionBox" parent="." instance=ExtResource("2_box")]
+layout_mode = 1
+
+[node name="FloatingBadge" parent="." instance=ExtResource("4_badge")]
+visible = false
+layout_mode = 1

@@ -1,0 +1,35 @@
+Godot Engine v4.7.stable.official.5b4e0cb0f - https://godotengine.org
+
+ERROR: Condition "ret != noErr" is true. Returning: ""
+   at: get_system_ca_certificates (platform/macos/os_macos.mm:1035)
+PASS: hierarchical route goes around three walls crossing cluster interiors
+PASS: long route uses the abstract graph and local searches
+PASS: hierarchical refinement retains the precise destination
+PASS: hierarchical detour remains bounded against native A-star
+PASS: one construction cell invalidates only its own cluster
+PASS: local cluster rebuild preserves neighboring portal connectivity
+PASS: separated components never create fictitious cluster passages
+PASS: opening a passage reconnects the component graph
+PASS: budgeted field construction and route assignment finish
+PASS: 49 distinct starting cells share one reverse flow field
+PASS: an obsolete queued move cannot overwrite a stop order
+PASS: flow field preserves separate formation slots
+PASS: all group routes obey the same obstacle and step rules
+GROUP JOURNEY: 0 seconds, arrived 0/49
+GROUP JOURNEY: 10 seconds, arrived 0/49
+GROUP JOURNEY: 20 seconds, arrived 0/49
+GROUP JOURNEY: 30 seconds, arrived 0/49
+GROUP JOURNEY: 40 seconds, arrived 0/49
+GROUP JOURNEY: 50 seconds, arrived 0/49
+GROUP JOURNEY: 60 seconds, arrived 0/49
+GROUP JOURNEY: 70 seconds, arrived 7/49
+GROUP JOURNEY: 80 seconds, arrived 27/49
+GROUP JOURNEY: 90 seconds, arrived 24/49
+GROUP JOURNEY: 100 seconds, arrived 31/49
+GROUP JOURNEY: 110 seconds, arrived 43/49
+GROUP JOURNEY: 120 seconds, arrived 43/49
+GROUP JOURNEY: 130 seconds, arrived 44/49
+GROUP JOURNEY: 140 seconds, arrived 49/49
+PASS: all 49 actors physically follow the shared field around walls into separate formation slots
+PASS: a field built against an old world revision is rejected
+HIERARCHICAL FLOW CHECKS: 15 | FAILURES: 0

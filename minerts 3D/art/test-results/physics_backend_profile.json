@@ -1,0 +1,30 @@
+[
+	{
+		"actors": 200,
+		"backend": "nodes",
+		"p50_motion_ms": 0.221,
+		"p95_motion_ms": 0.273,
+		"p99_motion_ms": 0.294
+	},
+	{
+		"actors": 200,
+		"backend": "server",
+		"p50_motion_ms": 0.218,
+		"p95_motion_ms": 0.252,
+		"p99_motion_ms": 0.268
+	},
+	{
+		"actors": 1000,
+		"backend": "nodes",
+		"p50_motion_ms": 1.16,
+		"p95_motion_ms": 1.516,
+		"p99_motion_ms": 2.405
+	},
+	{
+		"actors": 1000,
+		"backend": "server",
+		"p50_motion_ms": 1.169,
+		"p95_motion_ms": 1.441,
+		"p99_motion_ms": 2.404
+	}
+]

@@ -1,0 +1,40 @@
+Godot Engine v4.7.stable.official.5b4e0cb0f - https://godotengine.org
+
+ERROR: Condition "ret != noErr" is true. Returning: ""
+   at: get_system_ca_certificates (platform/macos/os_macos.mm:1035)
+BOT STATE @ 30 s: buildings [1, 10, 9, 7] units [15] wallet { "wood": 9, "stone": 10, "food": 108, "ore": 20, "water": 6 } population 9
+BOT STATE @ 60 s: buildings [1, 10, 9, 7, 8, 2] units [15] wallet { "wood": 16, "stone": 18, "food": 72, "ore": 20, "water": 14 } population 11
+BOT STATE @ 90 s: buildings [1, 10, 9, 7, 8, 2] units [15, 16] wallet { "wood": 32, "stone": 42, "food": 118, "ore": 20, "water": 20 } population 12
+BOT STATE @ 120 s: buildings [1, 10, 9, 7, 8, 2] units [15, 16, 17, 18] wallet { "wood": 14, "stone": 41, "food": 159, "ore": 20, "water": 26 } population 14
+BOT STATE @ 150 s: buildings [1, 10, 9, 7, 8, 2, 5, 11] units [15, 16, 17, 18] wallet { "wood": 16, "stone": 45, "food": 195, "ore": 20, "water": 32 } population 14
+BOT STATE @ 180 s: buildings [1, 10, 9, 7, 8, 2, 5, 11] units [15, 16, 17, 18] wallet { "wood": 49, "stone": 39, "food": 231, "ore": 20, "water": 38 } population 14
+BOT STATE @ 210 s: buildings [1, 10, 9, 7, 8, 2, 5, 11] units [15, 16, 17, 18, 19] wallet { "wood": 6, "stone": 13, "food": 161, "ore": 15, "water": 40 } population 15
+BOT STATE @ 240 s: buildings [1, 10, 9, 7, 8, 2, 5, 11] units [15, 16, 17, 18, 19, 20, 22] wallet { "wood": 111, "stone": 52, "food": 185, "ore": 15, "water": 44 } population 14
+BOT STATE @ 270 s: buildings [1, 10, 9, 7, 8, 2, 5, 11] units [15, 16, 17, 18, 19, 20, 22] wallet { "wood": 151, "stone": 52, "food": 199, "ore": 37, "water": 46 } population 16
+BOT STATE @ 300 s: buildings [1, 10, 9, 7, 8, 2, 5, 11] units [15, 16, 17, 18, 19, 20, 22] wallet { "wood": 205, "stone": 54, "food": 142, "ore": 56, "water": 50 } population 16
+BOT STATE @ 330 s: buildings [1, 10, 9, 7, 8, 2, 5, 11] units [15, 16, 17, 18, 19, 20, 22] wallet { "wood": 277, "stone": 78, "food": 178, "ore": 80, "water": 52 } population 17
+BOT STATE @ 360 s: buildings [1, 10, 9, 7, 8, 2, 5, 11] units [15, 16, 17, 18, 19, 20, 22] wallet { "wood": 295, "stone": 102, "food": 162, "ore": 104, "water": 56 } population 20
+BOT STATE @ 390 s: buildings [1, 10, 9, 7, 8, 2, 5, 11] units [15, 16, 17, 18, 19, 20, 22] wallet { "wood": 373, "stone": 104, "food": 117, "ore": 123, "water": 58 } population 22
+BOT STATE @ 420 s: buildings [1, 10, 9, 7, 8, 2, 5, 11] units [15, 16, 17, 18, 19, 20, 22] wallet { "wood": 447, "stone": 126, "food": 141, "ore": 145, "water": 62 } population 23
+PASS: AI worker physically completes the barracks
+PASS: AI establishes its irrigated food economy
+PASS: AI develops a coastal port
+PASS: AI replenishes its workforce through timed recruitment
+PASS: AI produces all five military roles through the real queue
+PASS: AI units explore their island
+PASS: night monsters actually engage the goblin settlement
+PASS: goblin settlement survives a complete night
+PASS: workers deliver enough resources for sustained development
+WORKER: (420.2614, 2.0, 74.49999) state 1 order 2 target Tree_4576:<StaticBody3D#4905792466429> inventory { "type": "", "amount": 0 }
+WORKER: (398.0, 2.0, 82.0) state 9 order 0 target @StaticBody3D@8138:<StaticBody3D#5677728976566> inventory { "type": "", "amount": 0 }
+WORKER: (363.5, 0.22, 119.5) state 0 order 0 target <null> inventory { "type": "", "amount": 0 }
+WORKER: (410.2488, 5.0, 49.57317) state 2 order 2 target Tree_4323:<StaticBody3D#4884569286924> inventory { "type": "wood", "amount": 10 }
+WORKER: (405.5, 3.0, 48.30008) state 2 order 2 target Tree_4310:<StaticBody3D#4883478767819> inventory { "type": "wood", "amount": 4 }
+WORKER: (398.0, 2.0, 82.0) state 9 order 0 target @StaticBody3D@8138:<StaticBody3D#5677728976566> inventory { "type": "", "amount": 0 }
+WORKER: (406.5, 4.0, 121.9) state 1 order 2 target Tree_4359:<StaticBody3D#4887589185984> inventory { "type": "", "amount": 0 }
+WORKER: (415.9044, 2.0, 68.4592) state 8 order 2 target @StaticBody3D@8154:<StaticBody3D#5690194448141> inventory { "type": "wood", "amount": 14 }
+WORKER: (432.4601, 5.0, 68.08345) state 2 order 2 target Tree_4577:<StaticBody3D#4905876352514> inventory { "type": "", "amount": 0 }
+WORKER: (426.2165, 4.008336, 83.5) state 8 order 2 target @StaticBody3D@8154:<StaticBody3D#5690194448141> inventory { "type": "wood", "amount": 14 }
+WORKER: (386.1455, 5.0, 106.4475) state 2 order 2 target Tree_4160:<StaticBody3D#4870895855069> inventory { "type": "", "amount": 0 }
+DELIVERED WOOD: 1088
+SIMULATION CHECKS: 9 | FAILURES: 0

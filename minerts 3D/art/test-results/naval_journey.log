@@ -1,0 +1,16 @@
+Godot Engine v4.7.stable.official.5b4e0cb0f - https://godotengine.org
+
+ERROR: Condition "ret != noErr" is true. Returning: ""
+   at: get_system_ca_certificates (platform/macos/os_macos.mm:1035)
+PASS: two islands have physically accessible landing shores
+PASS: passenger 1 boards galley
+PASS: passenger 2 boards galley
+PASS: passenger 3 boards galley
+PASS: galley carries the whole selected squad
+PASS: land destination creates a sailing and disembarkation order
+VOYAGE: 30 s (320.128, 0.22, 75.50001) remaining waypoints 24
+PASS: galley physically leaves the home island
+PASS: galley reaches the far shore through water
+PASS: all passengers automatically disembark on the destination island
+PASS: disembarked squad occupies separate free cells
+NAVAL CHECKS: 10 | FAILURES: 0

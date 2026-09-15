@@ -1,0 +1,65 @@
+[
+	{
+		"field_cells": 0,
+		"mode": "native",
+		"path_points": 21175,
+		"requests": 50,
+		"total_ms": 159.312
+	},
+	{
+		"field_cells": 0,
+		"mode": "hierarchical",
+		"path_points": 22175,
+		"requests": 50,
+		"total_ms": 28.206
+	},
+	{
+		"field_cells": 7125,
+		"mode": "flow",
+		"path_points": 21175,
+		"requests": 50,
+		"total_ms": 39.498
+	},
+	{
+		"field_cells": 0,
+		"mode": "native",
+		"path_points": 84100,
+		"requests": 200,
+		"total_ms": 653.947
+	},
+	{
+		"field_cells": 0,
+		"mode": "hierarchical",
+		"path_points": 88100,
+		"requests": 200,
+		"total_ms": 58.028
+	},
+	{
+		"field_cells": 7605,
+		"mode": "flow",
+		"path_points": 84100,
+		"requests": 200,
+		"total_ms": 64.815
+	},
+	{
+		"field_cells": 0,
+		"mode": "native",
+		"path_points": 412000,
+		"requests": 1000,
+		"total_ms": 3266.614
+	},
+	{
+		"field_cells": 0,
+		"mode": "hierarchical",
+		"path_points": 432000,
+		"requests": 1000,
+		"total_ms": 302.131
+	},
+	{
+		"field_cells": 8085,
+		"mode": "flow",
+		"path_points": 412000,
+		"requests": 1000,
+		"total_ms": 208.301
+	}
+]

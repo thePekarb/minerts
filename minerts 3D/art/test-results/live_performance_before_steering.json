@@ -1,0 +1,74 @@
+[
+	{
+		"baked": 5,
+		"buildings": 2,
+		"draw_calls": 1616.83333333333,
+		"p50_ms": 10.344,
+		"p95_ms": 14.791,
+		"p99_ms": 99.266,
+		"peak_system_ms": {
+			"combat": 0.157,
+			"fog": 4.783,
+			"gathering": 0.038,
+			"lumber": 0.009
+		},
+		"physics_p95_ms": 20.019,
+		"scenario": "settlement_balanced",
+		"skeletons": 0,
+		"units": 71
+	},
+	{
+		"baked": 190,
+		"buildings": 4,
+		"draw_calls": 1943.87777777778,
+		"p50_ms": 156.004,
+		"p95_ms": 182.962,
+		"p99_ms": 191.509,
+		"peak_system_ms": {
+			"combat": 45.417,
+			"fog": 8.529,
+			"gathering": 0.135,
+			"lumber": 0.006
+		},
+		"physics_p95_ms": 29.945,
+		"scenario": "184_combatants_fog_buildings_balanced",
+		"skeletons": 0,
+		"units": 271
+	},
+	{
+		"baked": 0,
+		"buildings": 4,
+		"draw_calls": 5736.8,
+		"p50_ms": 131.989,
+		"p95_ms": 166.506,
+		"p99_ms": 169.541,
+		"peak_system_ms": {
+			"combat": 50.055,
+			"fog": 6.309,
+			"gathering": 0.139,
+			"lumber": 0.008
+		},
+		"physics_p95_ms": 29.004,
+		"scenario": "same_battle_native_resolution_skeletons",
+		"skeletons": 189,
+		"units": 270
+	},
+	{
+		"baked": 189,
+		"buildings": 4,
+		"draw_calls": 1941.52777777778,
+		"p50_ms": 89.429,
+		"p95_ms": 129.112,
+		"p99_ms": 142.75,
+		"peak_system_ms": {
+			"combat": 39.3,
+			"fog": 6.265,
+			"gathering": 0.169,
+			"lumber": 0.005
+		},
+		"physics_p95_ms": 30.573,
+		"scenario": "same_battle_balanced_again",
+		"skeletons": 0,
+		"units": 270
+	}
+]

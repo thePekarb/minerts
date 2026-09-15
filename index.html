@@ -1,0 +1,190 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <link rel="icon" type="image/svg+xml" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>🏰</text></svg>" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Frontier Blocks — 3D RTS</title>
+    <link rel="stylesheet" href="./src/style.css" />
+  </head>
+  <body>
+    <div id="game-container">
+      <canvas id="game-canvas"></canvas>
+      <div id="selection-box" class="hidden"></div>
+      <div id="lumber-zones-overlay"></div>
+      
+      <!-- Top Resource & Status Bar -->
+      <header id="top-bar">
+        <div class="resource-group">
+          <div class="res-item" title="Wood / Дерево"><span class="res-icon">🪵</span> <span id="res-wood">50</span></div>
+          <div class="res-item" title="Stone / Камень"><span class="res-icon">🪨</span> <span id="res-stone">30</span></div>
+          <div class="res-item" title="Food / Еда"><span class="res-icon">🌾</span> <span id="res-food">40</span></div>
+          <div class="res-item" title="Ore / Руда"><span class="res-icon">⛏️</span> <span id="res-ore">0</span></div>
+          <div class="res-item" title="Population / Население"><span class="res-icon">👥</span> <span id="res-pop">4/6</span></div>
+        </div>
+
+        <div class="time-group">
+          <div id="time-phase-badge" class="badge-day">☀️ Day</div>
+          <div id="time-clock">08:00</div>
+          <div id="day-counter">Day 1</div>
+          <div id="wave-warning" class="hidden">⚠️ Raid in <span id="wave-timer">30s</span>!</div>
+        </div>
+
+        <div class="controls-group">
+          <button id="btn-pause" class="btn-icon" title="Pause / Space">⏸️</button>
+          <button id="btn-speed" class="btn-icon" title="Toggle Speed">1x</button>
+          <button id="btn-sound" class="btn-icon" title="Toggle Sound">🔊</button>
+          <button id="btn-save" class="btn-icon" title="Save Game">💾</button>
+          <button id="btn-load" class="btn-icon" title="Load Game">📂</button>
+          <button id="btn-help" class="btn-icon" title="Controls Help">❓</button>
+        </div>
+      </header>
+
+      <!-- Event Notification Log (Left side) -->
+      <div id="event-log"></div>
+
+      <!-- Bottom RTS HUD -->
+      <footer id="bottom-bar">
+        <!-- Selection Inspection Card -->
+        <div id="selection-panel" class="panel hidden">
+          <div class="panel-header">
+            <div id="sel-icon" class="sel-icon">🧑‍🌾</div>
+            <div class="sel-info">
+              <div id="sel-title" class="sel-title">Worker</div>
+              <div id="sel-subtitle" class="sel-subtitle">State: Idle</div>
+            </div>
+          </div>
+          <div class="hp-bar-container">
+            <div id="sel-hp-bar" class="hp-bar-fill" style="width: 100%;"></div>
+          </div>
+          <div id="sel-hp-text" class="hp-text">50 / 50 HP</div>
+          <div id="sel-stats" class="stats-row">
+            <span>⚔️ <span id="stat-dmg">4</span></span>
+            <span>🛡️ <span id="stat-arm">0</span></span>
+            <span>⚡ <span id="stat-spd">3.5</span></span>
+          </div>
+          <div id="sel-inventory" class="inventory-row hidden">
+            <span>📦 Carrying: <span id="inv-details">Empty</span></span>
+          </div>
+          <div id="sel-actions" class="unit-actions">
+            <button id="act-stop" class="btn-action" title="Stop [S]">🛑 Stop</button>
+            <button id="act-hold" class="btn-action" title="Hold [H]">🛡️ Hold</button>
+            <button id="act-retreat" class="btn-action" title="Retreat [R]">🏃 Retreat</button>
+            <button id="act-train-worker" class="btn-action hidden" title="Train Worker (20 Food)">+🧑‍🌾 Worker</button>
+            <button id="act-train-guard" class="btn-action hidden" title="Train Guard (30 Food, 15 Wood)">+⚔️ Guard</button>
+            <button id="act-train-archer" class="btn-action hidden" title="Train Archer (25 Food, 20 Wood)">+🏹 Archer</button>
+            <button id="act-repair" class="btn-action hidden" title="Repair Building">🔧 Repair</button>
+            <button id="act-upgrade-mine" class="btn-action hidden" title="Upgrade to Deep Ore Mine (40 Wood, 30 Stone)">⬆️ Deep Mine</button>
+            <button id="act-toggle-gate" class="btn-action hidden" title="Open or Close Gate Door [O]">🚪 Open Gate</button>
+          </div>
+        </div>
+
+        <!-- Multi-Unit Selection Box -->
+        <div id="multi-selection-panel" class="panel hidden">
+          <div class="multi-title">Selected Squad (<span id="multi-count">0</span>)</div>
+          <div id="multi-unit-list" class="multi-grid"></div>
+        </div>
+
+        <!-- Build Menu Dock -->
+        <div id="build-dock" class="panel">
+          <div class="panel-tab">Buildings & Orders [B]</div>
+          <div class="build-buttons">
+            <button class="btn-build" data-type="hut" title="Hut: +3 Pop (Cost: 30W)">
+              <span class="b-icon">🛖</span>
+              <span class="b-name">Hut [1]</span>
+              <span class="b-cost">30🪵</span>
+            </button>
+            <button class="btn-build" data-type="storage" title="Storage: Resource drop-off (Cost: 35W, 20S)">
+              <span class="b-icon">📦</span>
+              <span class="b-name">Storage [2]</span>
+              <span class="b-cost">35🪵 20🪨</span>
+            </button>
+            <button class="btn-build" data-type="wall" title="Wall: Defensive barrier (Cost: 10W)">
+              <span class="b-icon">🧱</span>
+              <span class="b-name">Wall [3]</span>
+              <span class="b-cost">10🪵</span>
+            </button>
+            <button class="btn-build" data-type="gate" title="Gate: Passable door (Cost: 15W, 5S)">
+              <span class="b-icon">🚪</span>
+              <span class="b-name">Gate [4]</span>
+              <span class="b-cost">15🪵 5🪨</span>
+            </button>
+            <button class="btn-build" data-type="tower" title="Defense Tower: Auto-shoots enemies (Cost: 40W, 25S)">
+              <span class="b-icon">🗼</span>
+              <span class="b-name">Tower [5]</span>
+              <span class="b-cost">40🪵 25🪨</span>
+            </button>
+            <button class="btn-build" data-type="workshop" title="Workshop: Advanced tech (Cost: 50W, 30S, 10Ore)">
+              <span class="b-icon">🔨</span>
+              <span class="b-name">Workshop [6]</span>
+              <span class="b-cost">50🪵 30🪨</span>
+            </button>
+            <button class="btn-build" data-type="mine" title="Mine: Stone Quarry (Cost: 30W), upgradable to Deep Ore Mine">
+              <span class="b-icon">⛏️</span>
+              <span class="b-name">Mine [7]</span>
+              <span class="b-cost">30🪵</span>
+            </button>
+            <button id="btn-lumber-zone" class="btn-build special-tool" title="Lumber Zone [Z]: Click, drag circle around trees, release to place zone. Right-click with workers to clear zone!">
+              <span class="b-icon">🪓</span>
+              <span class="b-name">Lumber [Z]</span>
+              <span class="b-cost">Area Log</span>
+            </button>
+          </div>
+        </div>
+
+        <!-- Minimap Display -->
+        <div id="minimap-container" class="panel">
+          <canvas id="minimap-canvas" width="160" height="160"></canvas>
+          <div class="minimap-legend">
+            <span><i class="dot player"></i>Friendly</span>
+            <span><i class="dot enemy"></i>Enemy</span>
+            <span><i class="dot poi"></i>POI</span>
+          </div>
+        </div>
+      </footer>
+
+      <!-- Debug Overlay -->
+      <div id="debug-overlay" class="panel">
+        <div>FPS: <span id="dbg-fps">60</span></div>
+        <div>Draw Calls: <span id="dbg-draws">0</span></div>
+        <div>Triangles: <span id="dbg-tris">0</span></div>
+        <div>Units: <span id="dbg-units">0</span> | Enemies: <span id="dbg-enemies">0</span></div>
+        <div>Sim Tick: <span id="dbg-tick">0ms</span></div>
+        <div>Camera: <span id="dbg-cam">0, 0</span></div>
+      </div>
+
+      <!-- Help Modal -->
+      <div id="help-modal" class="modal hidden">
+        <div class="modal-content">
+          <h2>Frontier Blocks — Controls & Guide</h2>
+          <div class="help-grid">
+            <div><strong>Left Click:</strong> Select unit or building</div>
+            <div><strong>Drag Box:</strong> Marquee select multiple units</div>
+            <div><strong>Right Click:</strong> Move / Gather / Attack / Build</div>
+            <div><strong>WASD / Arrows:</strong> Pan Camera</div>
+            <div><strong>Q / E:</strong> Rotate Camera</div>
+            <div><strong>Mouse Wheel:</strong> Zoom In / Out</div>
+            <div><strong>1–7:</strong> Place Buildings (Hut, Storage, Wall, Gate, Tower, Workshop, Mine)</div>
+            <div><strong>Z:</strong> Toggle Lumber Zone tool (Drag circle around trees)</div>
+            <div><strong>Ctrl + 1–5:</strong> Save unit squad / <strong>1–5:</strong> Recall squad</div>
+            <div><strong>Space:</strong> Pause / Resume</div>
+            <div><strong>Esc:</strong> Cancel building ghost / clear selection</div>
+          </div>
+          <button id="btn-close-help" class="btn-primary">Got it!</button>
+        </div>
+      </div>
+
+      <!-- Game Over / Victory Modal -->
+      <div id="game-over-modal" class="modal hidden">
+        <div class="modal-content">
+          <h2 id="game-over-title">Game Over</h2>
+          <p id="game-over-desc">Your central camp was destroyed!</p>
+          <div id="game-over-stats"></div>
+          <button id="btn-restart" class="btn-primary">Play Again</button>
+        </div>
+      </div>
+    </div>
+
+    <script type="module" src="./src/main.ts"></script>
+  </body>
+</html>

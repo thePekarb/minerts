@@ -1,0 +1,28 @@
+Godot Engine v4.7.stable.official.5b4e0cb0f - https://godotengine.org
+
+ERROR: Condition "ret != noErr" is true. Returning: ""
+   at: get_system_ca_certificates (platform/macos/os_macos.mm:1035)
+PASS: spatial queries preserve exact neighbors for 1024 actors, including cell borders
+PASS: 1024 actors share one spatial snapshot
+PASS: distributed crowd requires fewer than 5 percent of all-pairs candidates
+BENCH SPATIAL: naive_us=264425 indexed_us=6868 candidates=7056 all_pairs=1048576
+PASS: freed units in a snapshot are safely ignored
+PASS: local navigation separates underground actors from surface neighbors
+PASS: teleport out of a garrison invalidates the spatial snapshot immediately
+PASS: spatial snapshot can be rebuilt after despawning a crowd
+PASS: 50 repeated cell-to-cell requests share one A-star solution and retain precise endpoints
+PASS: shared cached route retains each order's exact destination
+PASS: construction invalidates cached routes and replans around the wall
+PASS: live graph validation rejects a directly blocked cached route
+PASS: path cache has a fixed memory bound
+PASS: cached and uncached height-aware fog produce identical visibility
+PASS: stationary observers reuse their raycasts across five visibility ticks
+PASS: unchanged visibility uploads its texture only once
+PASS: single-channel fog mask consumes 256 KiB instead of 1 MiB
+BENCH LOS: uncached_us=190898 cached_us=58709 uncached_rays=49250 cached_rays=9850
+PASS: observer sees open ground within sight range
+PASS: new wall invalidates sight cache and hides previously explored ground
+PASS: removed wall restores sight on the next visibility tick
+PASS: moving observers preserve explored, current and unknown states
+PASS: sight cache remains bounded during long exploration
+RTS OPTIMIZATION CHECKS: 21 | FAILURES: 0

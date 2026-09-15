@@ -1,0 +1,24 @@
+# Operating System
+.DS_Store
+.DS_Store?
+._*
+.Spotlight-V100
+.Trashes
+ehthumbs.db
+Thumbs.db
+
+# Godot 4
+.godot/
+**/.godot/
+*.translation
+
+# Node / Web Build
+node_modules/
+dist/
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+
+# Blender backups
+*.blend1
+*.blend2

@@ -1,0 +1,98 @@
+[
+	{
+		"baked": 5,
+		"buildings": 2,
+		"draw_calls": 1636.8,
+		"navigation_usec": {
+			"neighbors": 228,
+			"physics_motion": 166,
+			"recovery": 23,
+			"steering": 535
+		},
+		"p50_ms": 7.906,
+		"p95_ms": 14.009,
+		"p99_ms": 74.419,
+		"peak_system_ms": {
+			"combat": 0.161,
+			"fog": 4.46,
+			"gathering": 0.041,
+			"lumber": 0.005
+		},
+		"physics_p95_ms": 19.5,
+		"scenario": "settlement_balanced",
+		"skeletons": 0,
+		"units": 71
+	},
+	{
+		"baked": 182,
+		"buildings": 4,
+		"draw_calls": 1876.45555555556,
+		"navigation_usec": {
+			"neighbors": 912,
+			"physics_motion": 302,
+			"recovery": 38,
+			"steering": 1858
+		},
+		"p50_ms": 13.879,
+		"p95_ms": 30.204,
+		"p99_ms": 37.458,
+		"peak_system_ms": {
+			"combat": 31.187,
+			"fog": 11.583,
+			"gathering": 0.151,
+			"lumber": 0.004
+		},
+		"physics_p95_ms": 12.28,
+		"scenario": "184_combatants_fog_buildings_balanced",
+		"skeletons": 0,
+		"units": 255
+	},
+	{
+		"baked": 0,
+		"buildings": 4,
+		"draw_calls": 5598.34444444444,
+		"navigation_usec": {
+			"neighbors": 409,
+			"physics_motion": 262,
+			"recovery": 36,
+			"steering": 2490
+		},
+		"p50_ms": 23.522,
+		"p95_ms": 35.551,
+		"p99_ms": 41.981,
+		"peak_system_ms": {
+			"combat": 12.426,
+			"fog": 7.83,
+			"gathering": 0.136,
+			"lumber": 0.005
+		},
+		"physics_p95_ms": 12.355,
+		"scenario": "same_battle_native_resolution_skeletons",
+		"skeletons": 185,
+		"units": 255
+	},
+	{
+		"baked": 186,
+		"buildings": 4,
+		"draw_calls": 1900.06666666667,
+		"navigation_usec": {
+			"neighbors": 1340,
+			"physics_motion": 426,
+			"recovery": 642,
+			"steering": 3417
+		},
+		"p50_ms": 13.665,
+		"p95_ms": 23.264,
+		"p99_ms": 30.053,
+		"peak_system_ms": {
+			"combat": 12.99,
+			"fog": 7.31,
+			"gathering": 0.157,
+			"lumber": 0.005
+		},
+		"physics_p95_ms": 11.03,
+		"scenario": "same_battle_balanced_again",
+		"skeletons": 0,
+		"units": 271
+	}
+]

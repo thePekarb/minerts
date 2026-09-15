@@ -1,0 +1,18 @@
+Godot Engine v4.7.stable.official.5b4e0cb0f - https://godotengine.org
+Metal 4.0 - Forward+ - Using Device #0: Apple - Apple M1 Pro (Apple7)
+
+PASS: near selected skeletons and far baked models coexist
+PASS: batched actors suspend their individual animation players
+PASS: baked character materials merge into one surface per batch
+PASS: selecting a batched unit restores its full skeleton
+PASS: hover focus restores the mesh used for interaction highlighting
+PASS: hidden units are removed from the instance buffer
+PASS: embarked passengers never leak into the crowd renderer
+PASS: despawning the last actor releases empty rendering batches
+CROWD PROFILE {"batched":0,"batches":0,"draw_calls":550.0,"mode":"skeleton","p50_ms":4.199,"p95_ms":4.94,"p99_ms":6.641,"physics_ms":3.385,"units":50}
+CROWD PROFILE {"batched":50,"batches":1,"draw_calls":1.0,"mode":"baked","p50_ms":3.571,"p95_ms":4.348,"p99_ms":4.897,"physics_ms":3.385,"units":50}
+CROWD PROFILE {"batched":0,"batches":0,"draw_calls":2200.0,"mode":"skeleton","p50_ms":6.867,"p95_ms":7.972,"p99_ms":10.365,"physics_ms":0.198,"units":200}
+CROWD PROFILE {"batched":200,"batches":1,"draw_calls":1.0,"mode":"baked","p50_ms":4.175,"p95_ms":4.753,"p99_ms":5.668,"physics_ms":0.0679999999999999,"units":200}
+CROWD PROFILE {"batched":0,"batches":0,"draw_calls":11000.0,"mode":"skeleton","p50_ms":35.137,"p95_ms":36.06,"p99_ms":36.343,"physics_ms":0.212733333333334,"units":1000}
+CROWD PROFILE {"batched":1000,"batches":4,"draw_calls":4.0,"mode":"baked","p50_ms":9.46,"p95_ms":9.913,"p99_ms":10.089,"physics_ms":0.2138,"units":1000}
+CROWD RENDER CHECKS: 8 | FAILURES: 0

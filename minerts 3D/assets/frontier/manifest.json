@@ -1,0 +1,110 @@
+{
+  "worker": {
+    "vertices": 592,
+    "animated": true
+  },
+  "knight": {
+    "vertices": 785,
+    "animated": true
+  },
+  "archer": {
+    "vertices": 602,
+    "animated": true
+  },
+  "scout": {
+    "vertices": 522,
+    "animated": true
+  },
+  "zombie": {
+    "vertices": 408,
+    "animated": true
+  },
+  "skeleton": {
+    "vertices": 712,
+    "animated": true
+  },
+  "creeper": {
+    "vertices": 552,
+    "animated": true
+  },
+  "spider": {
+    "vertices": 558,
+    "animated": true
+  },
+  "campfire": {
+    "vertices": 222,
+    "animated": false
+  },
+  "hut": {
+    "vertices": 688,
+    "animated": false
+  },
+  "storage": {
+    "vertices": 592,
+    "animated": false
+  },
+  "wall": {
+    "vertices": 105,
+    "animated": false
+  },
+  "gate": {
+    "vertices": 96,
+    "animated": false
+  },
+  "tower": {
+    "vertices": 496,
+    "animated": false
+  },
+  "workshop": {
+    "vertices": 976,
+    "animated": false
+  },
+  "mine": {
+    "vertices": 228,
+    "animated": false
+  },
+  "barracks": {
+    "vertices": 1024,
+    "animated": false
+  },
+  "tree_oak": {
+    "vertices": 502,
+    "animated": false
+  },
+  "tree_pine": {
+    "vertices": 426,
+    "animated": false
+  },
+  "tree_birch": {
+    "vertices": 598,
+    "animated": false
+  },
+  "tree_autumn": {
+    "vertices": 502,
+    "animated": false
+  },
+  "prop_rock": {
+    "vertices": 36,
+    "animated": false
+  },
+  "prop_fern": {
+    "vertices": 336,
+    "animated": false
+  },
+  "prop_grass": {
+    "vertices": 28,
+    "animated": false
+  },
+  "prop_flowers": {
+    "vertices": 140,
+    "animated": false
+  },
+  "prop_stump": {
+    "vertices": 32,
+    "animated": false
+  },
+  "prop_berries": {
+    "vertices": 150,
+    "animated": false
+  }
+}
