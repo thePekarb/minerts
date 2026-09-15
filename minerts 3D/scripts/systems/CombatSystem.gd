@@ -116,7 +116,7 @@ func _attack_or_chase(u: Unit, target: Node3D, delta: float) -> void:
 				target.take_damage(u.attack_damage)
 				if u.unit_type == UnitConfigs.UnitType.ZOMBIE:
 					SoundManager.play_zombie(u.global_position)
-				elif u.unit_type in [UnitConfigs.UnitType.WARRIOR, UnitConfigs.UnitType.KNIGHT]:
+				elif u.unit_type in [UnitConfigs.UnitType.WARRIOR, UnitConfigs.UnitType.KNIGHT, UnitConfigs.UnitType.GUARD, UnitConfigs.UnitType.GOBLIN_WARRIOR]:
 					SoundManager.play_knife_scrape(u.global_position)
 				elif u.unit_type == UnitConfigs.UnitType.WOLF:
 					SoundManager.play_wolf_growl(u.global_position)

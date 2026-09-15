@@ -6,6 +6,7 @@ enum UnitType {
 	SCOUT = 1,
 	GUARD = 2,
 	WARRIOR = 2,
+	KNIGHT = 2,
 	ARCHER = 3,
 	ENEMY_MELEE = 4,
 	RAIDER = 4,
