@@ -23,6 +23,7 @@ func tick(delta: float, buildings: Array[Building]) -> void:
 				if building.production_timer >= 20.0 and FactionEconomy.spend(building.faction,{"water": 2}):
 					building.production_timer -= 20.0
 					FactionEconomy.add(building.faction,"food", 12)
+					SoundManager.play_eat_apple()
 			if building.crop_plants:
 				building.crop_plants.scale.y = lerpf(0.12, 1.0, clampf(building.production_timer / 20.0, 0, 1))
 		else:

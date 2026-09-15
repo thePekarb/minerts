@@ -81,7 +81,7 @@ func _update_mines(delta: float) -> void:
 					var ore_produced: int = active_count * 1
 					FactionEconomy.add(mine.faction,"ore", ore_produced)
 
-				SoundManager.play_mine()
+				SoundManager.play_ore_mine(mine.global_position)
 
 func _update_unit_gather(u: Unit, delta: float) -> void:
 	# 1. If returning to storage with gathered resources
@@ -154,9 +154,12 @@ func _update_unit_gather(u: Unit, delta: float) -> void:
 
 		if u.gather_timer >= 1.0:
 			u.gather_timer = 0.0
-			SoundManager.play_chop()
 
 			var res_type: String = res_node.get_meta("resource_type", "wood")
+			if res_type in ["stone", "ore"]:
+				SoundManager.play_ore_pick(u.global_position)
+			else:
+				SoundManager.play_chop(u.global_position)
 			var capacity: int = int(u.config.get("inventory_capacity", 10))
 			var remaining: int = res_node.get_meta("resource_amount", 0)
 			var amount: int = mini(2, mini(remaining, capacity - int(u.inventory.get("amount", 0))))
@@ -274,7 +277,7 @@ func _update_unit_build(u: Unit, delta: float) -> void:
 		u.build_timer += delta
 		if u.build_timer >= 0.5:
 			u.build_timer = 0.0
-			SoundManager.play_build()
+			SoundManager.play_build(b.global_position)
 
 		var done: bool = b.advance_construction(delta * 100.0 / maxf(b.config.get("build_time", 5.0), 0.1))
 		if done:

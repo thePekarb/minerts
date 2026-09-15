@@ -137,7 +137,7 @@ func try_place(all_player_units: Array[Unit], keep_placing: bool = false) -> boo
 	var is_gate: bool = (active_building_type == BuildingConfigs.BuildingType.GATE)
 	grid_manager.occupy_area(current_grid_x, current_grid_z, fp.x, fp.y, building, is_gate)
 
-	SoundManager.play_build()
+	SoundManager.play_build(building.global_position)
 	EventBus.building_placed.emit(building)
 
 	# Dispatch any nearby idle worker to construct

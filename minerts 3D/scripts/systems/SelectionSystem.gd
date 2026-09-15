@@ -199,7 +199,7 @@ func _handle_building_target(b: Building) -> void:
 					u.set_path(path)
 					u.state = UnitConfigs.UnitState.MOVING
 					EventBus.mine_miner_count_changed.emit(b, b.assigned_miners.size())
-		SoundManager.play_click()
+		SoundManager.play_ore_pick(b.global_position)
 	else:
 		_issue_move_order(b.global_position)
 
@@ -264,7 +264,14 @@ func _issue_gather_order(res_node: Node) -> void:
 			var path: Array[Vector3] = grid_manager.find_interaction_path(u,res_node,2.0)
 			u.set_path(path)
 			u.state = UnitConfigs.UnitState.MOVING
-	SoundManager.play_click()
+	var res_type: String = res_node.get_meta("resource_type", "wood") if is_instance_valid(res_node) else ""
+	var pos: Vector3 = res_node.global_position if (is_instance_valid(res_node) and "global_position" in res_node) else Vector3.ZERO
+	if res_type in ["stone", "ore"]:
+		SoundManager.play_ore_pick(pos)
+	elif res_type == "wood":
+		SoundManager.play_chop(pos)
+	else:
+		SoundManager.play_click()
 
 func _issue_attack_order(target_e: Node3D) -> void:
 	for u in selected_units:

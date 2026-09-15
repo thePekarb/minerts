@@ -1,8 +1,9 @@
 extends Node
 
 var is_muted: bool = false
+var camera: Camera3D = null
 var sfx_players: Array[AudioStreamPlayer] = []
-const POOL_SIZE: int = 8
+const POOL_SIZE: int = 16
 var sound_cache: Dictionary = {}
 
 func _ready() -> void:
@@ -12,7 +13,10 @@ func _ready() -> void:
 		sfx_players.append(p)
 
 	EventBus.sound_requested.connect(play_sound)
-	_pregenerate_sounds()
+	_load_all_sounds()
+
+func set_camera(cam: Camera3D) -> void:
+	camera = cam
 
 func toggle_mute() -> bool:
 	is_muted = not is_muted
@@ -21,51 +25,227 @@ func toggle_mute() -> bool:
 			player.stop()
 	return is_muted
 
-func play_sound(sound_name: String) -> void:
+func play_sound(sound_name: String, volume_db: float = 0.0, pitch_scale: float = 1.0) -> void:
 	if is_muted:
 		return
-	var stream: AudioStreamWAV = sound_cache.get(sound_name, null)
+	var stream: AudioStream = sound_cache.get(sound_name, null)
 	if not stream:
 		return
 
 	for p in sfx_players:
 		if not p.playing:
 			p.stream = stream
+			p.volume_db = volume_db
+			p.pitch_scale = pitch_scale
 			p.play()
 			return
 	# If all busy, steal the first player
 	sfx_players[0].stream = stream
+	sfx_players[0].volume_db = volume_db
+	sfx_players[0].pitch_scale = pitch_scale
 	sfx_players[0].play()
 
-func play_click() -> void:
-	play_sound("click")
+func play_spatial(sound_name: String, world_pos: Vector3, max_distance: float = 28.0, base_vol_db: float = 0.0, pitch_var: float = 0.06) -> void:
+	if is_muted:
+		return
+	if is_instance_valid(camera):
+		var listener_pos: Vector3 = camera.current_focus if ("current_focus" in camera) else camera.global_position
+		var dist: float = Vector2(listener_pos.x - world_pos.x, listener_pos.z - world_pos.z).length()
+		if dist > max_distance:
+			return # Inaudible beyond max distance - spatial cutoff
+		var factor: float = clampf(1.0 - (dist / max_distance), 0.0, 1.0)
+		var vol_db: float = base_vol_db + linear_to_db(maxf(factor * factor, 0.01))
+		var pitch: float = 1.0 + randf_range(-pitch_var, pitch_var)
+		play_sound(sound_name, vol_db, pitch)
+	else:
+		play_sound(sound_name, base_vol_db)
 
-func play_select() -> void:
-	play_sound("select_unit")
+# ==============================================================================
+# Thematic Sound Triggers
+# ==============================================================================
 
-func play_build() -> void:
-	play_sound("build")
+# Wood Chopping (Axe) - sounds in proximity to the chopping process
+func play_chop(pos: Vector3 = Vector3.INF) -> void:
+	if pos != Vector3.INF:
+		play_spatial("chop", pos, 24.0, 1.5)
+	else:
+		play_sound("chop", 1.5)
 
-func play_chop() -> void:
-	play_sound("chop")
+# Ore & Stone Mining (Pickaxe on rock/ore)
+func play_ore_mine(pos: Vector3 = Vector3.INF) -> void:
+	if pos != Vector3.INF:
+		play_spatial("ore_mining", pos, 28.0, 1.5)
+	else:
+		play_sound("ore_mining", 1.5)
 
 func play_mine() -> void:
-	play_sound("mine")
+	play_ore_mine()
+
+func play_ore_pick(pos: Vector3 = Vector3.INF) -> void:
+	if pos != Vector3.INF:
+		play_spatial("ore_pick", pos, 26.0, 2.0)
+	else:
+		play_sound("ore_pick", 2.0)
+
+# Construction (Hammering wood/structures)
+func play_build(pos: Vector3 = Vector3.INF) -> void:
+	if pos != Vector3.INF:
+		play_spatial("build", pos, 30.0, 1.0)
+	else:
+		play_sound("build", 1.0)
+
+# Bow & Arrow
+func play_arrow(pos: Vector3 = Vector3.INF) -> void:
+	if pos != Vector3.INF:
+		play_spatial("arrow", pos, 32.0, 1.0)
+	else:
+		play_sound("arrow", 1.0)
+
+# Zombie (Night raid / attack / groan)
+func play_zombie(pos: Vector3 = Vector3.INF) -> void:
+	if pos != Vector3.INF:
+		play_spatial("zombie", pos, 28.0, 2.0)
+	else:
+		play_sound("zombie", 2.0)
+
+# Creeper
+func play_creeper_fuse(pos: Vector3 = Vector3.INF) -> void:
+	if pos != Vector3.INF:
+		play_spatial("creeper_fuse", pos, 28.0, 2.0)
+	else:
+		play_sound("creeper_fuse", 2.0)
+
+func play_creeper_explosion(pos: Vector3 = Vector3.INF) -> void:
+	if pos != Vector3.INF:
+		play_spatial("creeper_explosion", pos, 55.0, 4.0)
+	else:
+		play_sound("creeper_explosion", 4.0)
+
+# Eating Apple (Food consumption, training units, harvest)
+func play_eat_apple() -> void:
+	play_sound("eat_apple", 2.0)
+
+# Melee Sword Strike / Blade Clash
+func play_knife_scrape(pos: Vector3 = Vector3.INF) -> void:
+	if pos != Vector3.INF:
+		play_spatial("knife_scrape", pos, 26.0, 1.0)
+	else:
+		play_sound("knife_scrape", 1.0)
+
+# Male Death Cry (When a colonist falls in battle)
+func play_male_death(pos: Vector3 = Vector3.INF) -> void:
+	if pos != Vector3.INF:
+		play_spatial("male_death", pos, 35.0, 2.0)
+	else:
+		play_sound("male_death", 2.0)
+
+# Wolf / Wild animal growl
+func play_wolf_growl(pos: Vector3 = Vector3.INF) -> void:
+	if pos != Vector3.INF:
+		play_spatial("wolf_growl", pos, 28.0, 1.0)
+	else:
+		play_sound("wolf_growl", 1.0)
+
+# UI & Misc
+func play_click() -> void:
+	play_sound("click", -4.0)
+
+func play_select() -> void:
+	play_sound("select_unit", -2.0)
 
 func play_attack() -> void:
-	play_sound("attack")
+	play_sound("attack", 0.0)
 
 func play_horn() -> void:
-	play_sound("raid_horn")
+	play_sound("raid_horn", 2.0)
 
 func play_chest() -> void:
-	play_sound("chest")
+	play_sound("chest", 0.0)
 
 func play_pop() -> void:
-	play_sound("pop")
+	play_sound("pop", -2.0)
 
 func play_hit() -> void:
-	play_sound("hit")
+	play_sound("hit", 0.0)
+
+func _load_all_sounds() -> void:
+	_pregenerate_sounds()
+
+	# Custom theme recordings (with procedural fallbacks if file missing)
+	var s_chop: AudioStream = _load_wav_file("res://assets/sounds/wood_chop_single.wav")
+	if not s_chop: s_chop = _load_wav_file("res://assets/sounds/wood_chop.wav")
+	if s_chop: sound_cache["chop"] = s_chop
+
+	var s_ore: AudioStream = _load_wav_file("res://assets/sounds/ore_mining.wav")
+	if s_ore: sound_cache["ore_mining"] = s_ore
+
+	var s_pick: AudioStream = _load_wav_file("res://assets/sounds/ore_pick_single.wav")
+	if not s_pick: s_pick = s_ore
+	if s_pick: sound_cache["ore_pick"] = s_pick
+
+	var s_build: AudioStream = _load_wav_file("res://assets/sounds/construction.wav")
+	if s_build: sound_cache["build"] = s_build
+
+	var s_arrow: AudioStream = _load_wav_file("res://assets/sounds/arrow_single.wav")
+	if not s_arrow: s_arrow = _load_wav_file("res://assets/sounds/arrow_shot.wav")
+	if s_arrow: sound_cache["arrow"] = s_arrow
+
+	var s_zombie: AudioStream = _load_wav_file("res://assets/sounds/zombie.wav")
+	if s_zombie: sound_cache["zombie"] = s_zombie
+
+	var s_fuse: AudioStream = _load_wav_file("res://assets/sounds/creeper_fuse.wav")
+	if s_fuse: sound_cache["creeper_fuse"] = s_fuse
+
+	var s_boom: AudioStream = _load_wav_file("res://assets/sounds/creeper_explosion.wav")
+	if not s_boom: s_boom = _load_wav_file("res://assets/sounds/creeper.wav")
+	if s_boom:
+		sound_cache["creeper_explosion"] = s_boom
+		sound_cache["explosion"] = s_boom
+
+	var s_eat: AudioStream = _load_wav_file("res://assets/sounds/eat_apple.wav")
+	if s_eat: sound_cache["eat_apple"] = s_eat
+
+	var s_knife: AudioStream = _load_wav_file("res://assets/sounds/knife_scrape.wav")
+	if s_knife: sound_cache["knife_scrape"] = s_knife
+
+	var s_death: AudioStream = _load_wav_file("res://assets/sounds/male_death.wav")
+	if s_death: sound_cache["male_death"] = s_death
+
+	var s_wolf: AudioStream = _load_wav_file("res://assets/sounds/wolf_growl.wav")
+	if s_wolf: sound_cache["wolf_growl"] = s_wolf
+
+func _load_wav_file(path: String) -> AudioStreamWAV:
+	if ResourceLoader.exists(path):
+		var res: Resource = load(path)
+		if res is AudioStreamWAV:
+			return res
+	var file := FileAccess.open(path, FileAccess.READ)
+	if not file:
+		return null
+	var bytes: PackedByteArray = file.get_buffer(file.get_length())
+	file.close()
+	if bytes.size() < 44 or bytes.slice(0, 4).get_string_from_ascii() != "RIFF":
+		return null
+	var pos: int = 12
+	var rate: int = 44100
+	var channels: int = 1
+	var bits: int = 16
+	while pos < bytes.size() - 8:
+		var cid: String = bytes.slice(pos, pos + 4).get_string_from_ascii()
+		var csize: int = bytes.decode_u32(pos + 4)
+		if cid == "fmt " and csize >= 16:
+			channels = bytes.decode_u16(pos + 8 + 2)
+			rate = bytes.decode_u32(pos + 8 + 4)
+			bits = bytes.decode_u16(pos + 8 + 14)
+		elif cid == "data":
+			var wav_stream := AudioStreamWAV.new()
+			wav_stream.format = AudioStreamWAV.FORMAT_16_BITS if bits == 16 else AudioStreamWAV.FORMAT_8_BITS
+			wav_stream.mix_rate = rate
+			wav_stream.stereo = (channels == 2)
+			wav_stream.data = bytes.slice(pos + 8, pos + 8 + csize)
+			return wav_stream
+		pos += 8 + csize
+	return null
 
 func _pregenerate_sounds() -> void:
 	sound_cache["explosion"] = _gen_noise_thud(55.0, 0.5, 0.55)

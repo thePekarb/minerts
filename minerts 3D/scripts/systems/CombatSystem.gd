@@ -27,6 +27,7 @@ func process_combat(delta: float, all_units: Array[Unit], all_buildings: Array[B
 				if target:
 					b.mine_cycle_timer = 0.0
 					_spawn_projectile(b.global_position + Vector3(0, 3.2, 0), target, 16.0,b.faction)
+					SoundManager.play_arrow(b.global_position)
 
 func _process_player_combat_unit(u: Unit, delta: float, units: Array[Unit]) -> void:
 	u.target_scan_timer-=delta
@@ -69,7 +70,7 @@ func _process_enemy_unit(u: Unit, delta: float, units: Array[Unit], buildings: A
 		u.stop()
 		u.fuse_timer = 0.0
 		_show_blast_warning(u)
-		SoundManager.play_sound("fuse")
+		SoundManager.play_creeper_fuse(u.global_position)
 		return
 	_attack_or_chase(u, u.target, delta)
 	if u.state == UnitConfigs.UnitState.IDLE and u.path.is_empty() and not (u.target is Unit):
@@ -109,10 +110,18 @@ func _attack_or_chase(u: Unit, target: Node3D, delta: float) -> void:
 			u.attack_timer = 0.0
 			if u.config.get("ranged", false):
 				_spawn_projectile(u.global_position + Vector3(0, 1.1, 0), target, u.attack_damage,u.faction,u.unit_type==UnitConfigs.UnitType.STORM_WARDEN)
+				SoundManager.play_arrow(u.global_position)
 			else:
 				target.set_meta("last_hit_faction",u.faction)
 				target.take_damage(u.attack_damage)
-			SoundManager.play_attack()
+				if u.unit_type == UnitConfigs.UnitType.ZOMBIE:
+					SoundManager.play_zombie(u.global_position)
+				elif u.unit_type in [UnitConfigs.UnitType.WARRIOR, UnitConfigs.UnitType.KNIGHT]:
+					SoundManager.play_knife_scrape(u.global_position)
+				elif u.unit_type == UnitConfigs.UnitType.WOLF:
+					SoundManager.play_wolf_growl(u.global_position)
+				else:
+					SoundManager.play_attack()
 	elif u.repath_timer <= 0.0:
 		# Throttle expensive A* calls and refresh paths when targets move.
 		u.repath_timer = 0.65
@@ -160,7 +169,7 @@ func _process_fuse(u: Unit, delta: float, units: Array[Unit], buildings: Array[B
 			if distance < radius:
 				building.take_damage(damage * 1.8 * lerpf(1.0, 0.3, distance / radius))
 	_spawn_blast(pos, radius)
-	SoundManager.play_sound("explosion")
+	SoundManager.play_creeper_explosion(pos)
 	u.set_meta("self_destructed", true)
 	u.take_damage(u.health + u.armor)
 

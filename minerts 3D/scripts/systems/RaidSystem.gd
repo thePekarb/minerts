@@ -116,6 +116,7 @@ func spawn_night_wave() -> void:
 		if current_wave>=3 and i%6==5:type=UnitConfigs.UnitType.CREEPER
 		composition.append(type)
 	EventBus.raid_spawned.emit(current_wave, composition.size())
+	SoundManager.play_zombie()
 	var base_pos: Vector3 = Vector3(GridManager.CENTER + 0.5, 2, GridManager.CENTER + 0.5)
 	var active_altars: int = mini(1 + int((current_wave - 1) / 2), ALTAR_POSITIONS.size())
 	for i in range(composition.size()):

@@ -234,6 +234,7 @@ func issue_order(unit: Unit, target: Vector2i) -> bool:
 			best = d
 			entry = cave.entry
 	jobs[unit.get_instance_id()] = {"unit": weakref(unit), "target": target, "entry": entry, "dig_timer": 0.0}
+	SoundManager.play_ore_pick(Vector3(target.x + 0.5, FLOOR_Y, target.y + 0.5))
 	if not unit.underground_unit:
 		unit.set_path(game.grid_manager.find_path(unit.global_position, Vector3(entry.x + 0.5, 0, entry.y + 0.5)))
 		unit.state = UnitConfigs.UnitState.MOVING
@@ -324,7 +325,7 @@ func _process(delta: float) -> void:
 				cells[step] = true
 				discovered[step] = true
 				EconomyManager.add_resource("stone", 2)
-				SoundManager.play_mine()
+				SoundManager.play_ore_pick(Vector3(step.x + 0.5, FLOOR_Y, step.y + 0.5))
 				_rebuild_navigation()
 				_rebuild_visuals()
 		else:

@@ -92,6 +92,7 @@ func _init_core_world() -> void:
 	# 5. Camera terrain tracking
 	camera.set_terrain(terrain_generator)
 	camera.target_focus = Vector3(96.0, terrain_generator.get_height_at(96.0, 96.0), 96.0)
+	SoundManager.set_camera(camera)
 
 func _init_systems() -> void:
 	# Selection
@@ -209,12 +210,15 @@ func _on_entity_died(e: Variant) -> void:
 	if e is Unit:
 		if transport_system:transport_system.on_death(e)
 		all_units.erase(e)
+		if e.faction in ["player", "goblin"] and not UnitConfigs.is_vessel(e.unit_type):
+			SoundManager.play_male_death(e.global_position)
 		if e.faction == "enemy" and not e.get_meta("self_destructed", false):
 			var winner: String = e.get_meta("last_hit_faction","player")
 			FactionEconomy.add(winner,"wood",5);FactionEconomy.add(winner,"stone",3)
 			if winner=="player":SoundManager.play_pop();_show_loot(e.global_position)
 		if e.config.get("food_loot",0)>0 and wildlife_system:
 			carcass=wildlife_system.create_carcass(e)
+			SoundManager.play_eat_apple()
 		# Clear from lumber zones if assigned
 		for z in lumber_zone_system.zones:
 			z.assigned_workers.erase(e)
@@ -427,7 +431,9 @@ func _handle_mine_upgrade(b: Building) -> void:
 func _train_unit(type: UnitConfigs.UnitType) -> void:
 	var error: String = production_system.enqueue(selection_system.selected_building,type)
 	if error!="":hud.show_banner(error)
-	else:SoundManager.play_select()
+	else:
+		SoundManager.play_select()
+		SoundManager.play_eat_apple()
 
 func _unhandled_input(event: InputEvent) -> void:
 	if event is InputEventKey:
@@ -558,11 +564,16 @@ func _handle_single_click(pos: Vector2) -> void:
 		selection_system.select_single_unit(collider, Input.is_key_pressed(KEY_SHIFT))
 		lumber_zone_system.deselect_zone()
 		hud.floating_badge.hide_badge()
+		if collider.unit_type == UnitConfigs.UnitType.ZOMBIE:
+			SoundManager.play_zombie(collider.global_position)
 	elif collider is Building:
 		selection_system.select_building(collider)
 		lumber_zone_system.deselect_zone()
 		if collider.building_type == BuildingConfigs.BuildingType.MINE and collider.is_constructed and collider.faction=="player":
 			hud.floating_badge.show_for_mine(collider, collider.assigned_miners.size(), collider.max_miners, camera)
+			SoundManager.play_ore_pick(collider.global_position)
+		elif collider.building_type == BuildingConfigs.BuildingType.FARM:
+			SoundManager.play_eat_apple()
 		else:
 			hud.floating_badge.hide_badge()
 	elif collider and collider.get_parent() is Building:
@@ -571,6 +582,9 @@ func _handle_single_click(pos: Vector2) -> void:
 		lumber_zone_system.deselect_zone()
 		if b.building_type == BuildingConfigs.BuildingType.MINE and b.is_constructed and b.faction=="player":
 			hud.floating_badge.show_for_mine(b, b.assigned_miners.size(), b.max_miners, camera)
+			SoundManager.play_ore_pick(b.global_position)
+		elif b.building_type == BuildingConfigs.BuildingType.FARM:
+			SoundManager.play_eat_apple()
 		else:
 			hud.floating_badge.hide_badge()
 	else:
