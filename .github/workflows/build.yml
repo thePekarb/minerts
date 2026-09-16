@@ -97,8 +97,11 @@ jobs:
             APP_PATH=$(find build_output -name "*.app" | head -n 1)
           fi
           echo "Built application: $APP_PATH"
-          ls -lh "$APP_PATH"
-          
+          # Patch Info.plist for iPad compatibility
+          plutil -replace UIDeviceFamily -json '[1, 2]' "$APP_PATH/Info.plist"
+          plutil -replace MinimumOSVersion -string "15.0" "$APP_PATH/Info.plist"
+          codesign -s - --force --deep "$APP_PATH" || true
+
           # Package into standard .ipa
           mkdir -p Payload
           cp -r "$APP_PATH" Payload/
