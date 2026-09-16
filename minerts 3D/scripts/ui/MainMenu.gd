@@ -919,15 +919,15 @@ func _on_launch_match_pressed() -> void:
 func _setup_settings_modal() -> void:
 	settings_modal = PanelContainer.new()
 	settings_modal.add_theme_stylebox_override("panel", panel_style(Color("0f1e2bef"), Color("38bdf8"), 16))
-	anchored(settings_modal, -220, -160, 220, 160, 0.5, 0.5)
+	anchored(settings_modal, -240, -195, 240, 195, 0.5, 0.5)
 	add_child(settings_modal)
 	settings_modal.hide()
 
 	var box := VBoxContainer.new()
-	box.add_theme_constant_override("separation", 14)
+	box.add_theme_constant_override("separation", 12)
 	settings_modal.add_child(box)
 
-	box.add_child(label("⚙  Настройки графики и звука", 20, Color("38bdf8")))
+	box.add_child(label("⚙  Настройки графики и интерфейса", 20, Color("38bdf8")))
 
 	var scale_lbl := label("Качество 3D графики:", 14)
 	box.add_child(scale_lbl)
@@ -946,6 +946,14 @@ func _setup_settings_modal() -> void:
 	audio_chk.button_pressed = not SoundManager.is_muted
 	audio_chk.toggled.connect(func(v): SoundManager.is_muted = not v)
 	box.add_child(audio_chk)
+
+	var ui_edit_btn := button("🎨  Настройка интерфейса (HUD)", func():
+		settings_modal.hide()
+		var editor_script = load("res://scripts/ui/UIEditorOverlay.gd")
+		var editor: Control = editor_script.new()
+		add_child(editor)
+	, Vector2(240, 38))
+	box.add_child(ui_edit_btn)
 
 	var close_btn := button("Закрыть", func(): settings_modal.hide(), Vector2(120, 38))
 	box.add_child(close_btn)

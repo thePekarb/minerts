@@ -27,6 +27,7 @@ NetworkManager="*res://scripts/autoload/NetworkManager.gd"
 EventBus="*res://scripts/autoload/EventBus.gd"
 EconomyManager="*res://scripts/autoload/EconomyManager.gd"
 SoundManager="*res://scripts/autoload/SoundManager.gd"
+UILayoutManager="*res://scripts/autoload/UILayoutManager.gd"
 
 [debug]
 

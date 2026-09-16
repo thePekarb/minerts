@@ -210,7 +210,7 @@ func toggle_pause() -> void:
 	if NetworkManager.in_match:settings.visible=not settings.visible;return
 	hud.get_tree().paused=not hud.get_tree().paused;pause_button.text="▶" if hud.get_tree().paused else "Ⅱ"
 func _setup_settings() -> void:
-	settings=PanelContainer.new();hud.add_child(settings);settings.add_theme_stylebox_override("panel",panel_style());anchored(settings,-240,-150,240,150,.5,.5);settings.process_mode=Node.PROCESS_MODE_ALWAYS
+	settings=PanelContainer.new();hud.add_child(settings);settings.add_theme_stylebox_override("panel",panel_style());anchored(settings,-250,-185,250,185,.5,.5);settings.process_mode=Node.PROCESS_MODE_ALWAYS
 	settings.mouse_filter=Control.MOUSE_FILTER_STOP
 	var box := VBoxContainer.new();settings.add_child(box);box.add_child(label("Настройки графики",24))
 	var quality := OptionButton.new()
@@ -218,6 +218,13 @@ func _setup_settings() -> void:
 	box.add_child(quality);quality.item_selected.connect(set_quality);set_quality(0)
 	box.add_child(label("Интерфейс всегда в полном разрешении",16))
 	var audio := CheckButton.new();audio.text="Звук";audio.button_pressed=not SoundManager.is_muted;audio.toggled.connect(func(enabled):SoundManager.is_muted=not enabled);box.add_child(audio)
+	var ui_edit_btn := button("🎨  Настройка интерфейса (HUD)", func():
+		settings.hide()
+		var editor_script = load("res://scripts/ui/UIEditorOverlay.gd")
+		var editor: Control = editor_script.new()
+		hud.add_child(editor)
+	, Vector2(250, 40))
+	box.add_child(ui_edit_btn)
 	var btn_row := HBoxContainer.new()
 	btn_row.add_theme_constant_override("separation", 10)
 	var menu_btn := button("В главное меню", func():

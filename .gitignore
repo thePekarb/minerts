@@ -26,3 +26,11 @@ yarn-error.log*
 # Scratch & temporary test scripts
 scratch/
 **/scratch/
+
+# Local builds
+builds/
+**/builds/
+*.ipa
+*.app
+*.pck
+*.xcarchive

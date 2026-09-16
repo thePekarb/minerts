@@ -1,0 +1,131 @@
+name: Build Mac & iPad IPA
+
+on:
+  workflow_dispatch:
+  push:
+    branches: [ main, master ]
+
+jobs:
+  build-ios:
+    name: Build iPad (.ipa & Xcode project)
+    runs-on: macos-14
+    steps:
+      - name: Checkout Repository
+        uses: actions/checkout@v4
+
+      - name: Download & Setup Godot 4.7
+        run: |
+          echo "=== Downloading Godot 4.7 ==="
+          curl -L "https://github.com/godotengine/godot/releases/download/4.7-stable/Godot_v4.7-stable_macos.universal.zip" -o godot.zip
+          unzip -q godot.zip
+          mkdir -p ~/bin
+          mv "Godot.app/Contents/MacOS/Godot" ~/bin/godot
+          chmod +x ~/bin/godot
+          echo "$HOME/bin" >> $GITHUB_PATH
+
+      - name: Download Export Templates
+        run: |
+          echo "=== Downloading Export Templates ==="
+          mkdir -p ~/Library/Application\ Support/Godot/export_templates/4.7.stable
+          curl -L "https://github.com/godotengine/godot/releases/download/4.7-stable/Godot_v4.7-stable_export_templates.tpz" -o templates.tpz
+          unzip -q -j templates.tpz "templates/*" -d ~/Library/Application\ Support/Godot/export_templates/4.7.stable/
+
+      - name: Export iOS Xcode Project from Godot
+        run: |
+          echo "=== Exporting iOS Project from Godot ==="
+          mkdir -p "minerts 3D/builds/iOS"
+          
+          # Setup mock xcodebuild to satisfy Godot initial export step
+          mkdir -p /tmp/mock_bin
+          cat << 'EOF' > /tmp/mock_bin/xcodebuild
+          #!/bin/bash
+          for arg in "$@"; do
+            if [ "$arg" = "archive" ]; then
+              echo "** ARCHIVE SUCCEEDED **"
+              exit 0
+            fi
+            if [ "$arg" = "-exportArchive" ]; then
+              echo "** EXPORT SUCCEEDED **"
+              exit 0
+            fi
+          done
+          echo "** SUCCEEDED **"
+          exit 0
+          EOF
+          chmod +x /tmp/mock_bin/xcodebuild
+
+          PATH="/tmp/mock_bin:$PATH" godot --headless --path "minerts 3D" --export-release "iOS" "builds/iOS/minerts_ios"
+
+      - name: Build .IPA with macOS-14 Xcode
+        run: |
+          echo "=== Building with Real Xcode on GitHub Runner ==="
+          cd "minerts 3D/builds/iOS"
+          
+          # Build target with unsigned configuration for sideloading
+          xcodebuild -project minerts_ios.xcodeproj \
+                     -scheme minerts_ios \
+                     -sdk iphoneos \
+                     -configuration Release \
+                     -destination generic/platform=ios \
+                     CODE_SIGNING_ALLOWED=NO \
+                     CODE_SIGNING_REQUIRED=NO \
+                     CODE_SIGN_IDENTITY="" \
+                     clean build
+
+          # Find the compiled .app
+          BUILD_DIR=$(xcodebuild -project minerts_ios.xcodeproj -scheme minerts_ios -sdk iphoneos -configuration Release -showBuildSettings | grep -m 1 TARGET_BUILD_DIR | awk -F ' = ' '{print $2}')
+          echo "Target build directory: $BUILD_DIR"
+          
+          # Create IPA package
+          mkdir -p Payload
+          cp -r "$BUILD_DIR/minerts_ios.app" Payload/
+          zip -r -q minerts_ipad.ipa Payload
+          ls -lh minerts_ipad.ipa
+
+      - name: Upload iPad .IPA
+        uses: actions/upload-artifact@v4
+        with:
+          name: minerts-ipad-ipa
+          path: "minerts 3D/builds/iOS/minerts_ipad.ipa"
+          retention-days: 14
+
+      - name: Upload iPad Xcode Project Archive
+        uses: actions/upload-artifact@v4
+        with:
+          name: minerts-ipad-xcode-project
+          path: "minerts 3D/builds/iOS/"
+          retention-days: 14
+
+  build-macos:
+    name: Build Mac (.app & .zip)
+    runs-on: macos-14
+    steps:
+      - name: Checkout Repository
+        uses: actions/checkout@v4
+
+      - name: Download & Setup Godot 4.7
+        run: |
+          curl -L "https://github.com/godotengine/godot/releases/download/4.7-stable/Godot_v4.7-stable_macos.universal.zip" -o godot.zip
+          unzip -q godot.zip
+          mkdir -p ~/bin
+          mv "Godot.app/Contents/MacOS/Godot" ~/bin/godot
+          chmod +x ~/bin/godot
+          echo "$HOME/bin" >> $GITHUB_PATH
+
+      - name: Download Export Templates
+        run: |
+          mkdir -p ~/Library/Application\ Support/Godot/export_templates/4.7.stable
+          curl -L "https://github.com/godotengine/godot/releases/download/4.7-stable/Godot_v4.7-stable_export_templates.tpz" -o templates.tpz
+          unzip -q -j templates.tpz "templates/*" -d ~/Library/Application\ Support/Godot/export_templates/4.7.stable/
+
+      - name: Export macOS Application
+        run: |
+          mkdir -p "minerts 3D/builds/macOS"
+          godot --headless --path "minerts 3D" --export-release "macOS" "builds/macOS/minerts.zip"
+
+      - name: Upload macOS Application
+        uses: actions/upload-artifact@v4
+        with:
+          name: minerts-macos-app
+          path: "minerts 3D/builds/macOS/minerts.zip"
+          retention-days: 14

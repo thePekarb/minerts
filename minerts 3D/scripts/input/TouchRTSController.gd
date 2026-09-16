@@ -14,8 +14,18 @@ var last_world_touch: int=-1000
 var last_tap: int=-1000
 var last_tapped: Unit
 var last_position: Vector2
+var command_lock_active: bool = false
+signal command_lock_changed(active: bool)
 func setup(main: Main) -> void:
 	game=main;touch_enabled=DeviceLayout.is_mobile()
+
+func toggle_command_lock() -> bool:
+	set_command_lock(not command_lock_active)
+	return command_lock_active
+
+func set_command_lock(active: bool) -> void:
+	command_lock_active = active
+	command_lock_changed.emit(command_lock_active)
 func over_ui(point: Vector2) -> bool:
 	for child in game.hud.get_children():
 		if child is Control and child.is_visible_in_tree() and child.mouse_filter!=Control.MOUSE_FILTER_IGNORE and child.get_global_rect().has_point(point):return true
@@ -62,7 +72,7 @@ func _input(event: InputEvent) -> void:
 func _process(delta: float) -> void:
 	if fingers.size()!=1 or moved or multi or drawing or game.construction_system.is_placing():return
 	held+=delta
-	if held>=.45 and not selecting:
+	if held>=.35 and not selecting:
 		selecting=true;game.hud.selection_box.start_box(origins.values()[0])
 func pan(relative: Vector2) -> void:
 	var cam: RTSCamera=game.camera
@@ -73,6 +83,11 @@ func pan(relative: Vector2) -> void:
 func _tap(point: Vector2) -> void:
 	if game.construction_system.is_placing():game.construction_system.update_ghost(point);return
 	if game.is_demolish_mode:game._handle_left_mouse_down(point);return
+	# When command lock mode is active, any tap in the world sends orders to selected units
+	if command_lock_active and not game.selection_system.selected_units.is_empty():
+		game._handle_right_mouse_down(point)
+		return
+	# Otherwise in safe selection/navigation mode:
 	var hit: Dictionary=game.camera.raycast_objects(point)
 	var target=hit.get("collider")
 	if target is Unit and target.faction=="player":
@@ -82,8 +97,10 @@ func _tap(point: Vector2) -> void:
 				if unit.faction=="player" and unit.unit_type==target.unit_type and unit.is_alive and unit.is_visible_in_tree() and get_viewport().get_visible_rect().has_point(game.camera.unproject_position(unit.position)):game.selection_system.select_single_unit(unit,true)
 		else:game._handle_single_click(point)
 		last_tapped=target;last_tap=Time.get_ticks_msec()
-	elif not game.selection_system.selected_units.is_empty():game._handle_right_mouse_down(point)
-	else:game._handle_single_click(point)
+	else:
+		# Safe tap: selects building/enemy or clears selection without moving units
+		game._handle_single_click(point)
 func cancel() -> void:
+	set_command_lock(false)
 	game.construction_system.cancel_placement();game.lumber_zone_system.cancel_zone_placement();game.terraforming_system.deactivate()
 	game.set_demolish_mode(false);game.hud.skin.command("stop");game.selection_system.clear_selection()
