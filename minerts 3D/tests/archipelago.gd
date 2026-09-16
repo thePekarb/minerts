@@ -56,6 +56,7 @@ func _ready() -> void:
 	game.gathering_system._update_unit_gather(hunter,0.1)
 	check(is_instance_valid(camp),"depleted shared resource targets can be safely replaced")
 	var count: int = game.all_units.size()
+	FactionEconomy.add("player","axe",2)
 	check(game.production_system.enqueue(camp,UnitConfigs.UnitType.WORKER)=="" and game.all_units.size()==count,"training queues a unit without spawning it immediately")
 	check(game.production_system.population("player")==EconomyManager.current_population+1,"queued recruits reserve population capacity")
 	game.production_system.set_rally(camp,Vector3(94.5,2,91.5))
@@ -69,6 +70,7 @@ func _ready() -> void:
 	check(EconomyManager.resources.food==before and camp.training_queue.is_empty(),"cancelled recruitment refunds cost and frees queue reservation")
 	var bot_camp: Building = game.goblin_ai.own_buildings()[0]
 	before=EconomyManager.resources.food
+	FactionEconomy.add("goblin","axe",1)
 	game.production_system.enqueue(bot_camp,UnitConfigs.UnitType.GOBLIN_WORKER)
 	check(EconomyManager.resources.food==before and FactionEconomy.resources("goblin").food==162,"goblin production spends only its own resources")
 	check(not game.grid_manager.is_coastal_site(90,90,3,2),"ports cannot be placed inland")

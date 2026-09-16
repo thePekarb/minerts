@@ -48,4 +48,3 @@ func _impact(lair: Dictionary) -> void:
 	for victim in game.all_units.duplicate():
 		if is_instance_valid(victim) and victim.is_alive and victim.faction in ["player","goblin"] and not victim.underground_unit and not is_instance_valid(victim.embarked_in) and victim.position.distance_to(lair.impact)<2.8:victim.take_damage(55 if lair.type==UnitConfigs.UnitType.ANCIENT_GOLEM else 42)
 	if is_instance_valid(lair.warning):lair.warning.queue_free();lair.warning=null
-	SoundManager.play_hit()

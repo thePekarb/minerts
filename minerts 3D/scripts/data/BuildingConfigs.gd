@@ -20,7 +20,7 @@ const CONFIGS: Dictionary = {
 	BuildingType.CAMPFIRE: {
 		"name": "Campfire",
 		"icon": "🔥",
-		"cost": {"wood": 0, "stone": 0},
+		"cost": {"wood": 80, "stone": 30},
 		"size": Vector2i(2, 2),
 		"footprint": Vector2i(2, 2),
 		"build_time": 0.0,
@@ -48,7 +48,7 @@ const CONFIGS: Dictionary = {
 		"build_time": 7.0,
 		"max_health": 400,
 		"vision_range": 8.0,
-		"description": "Local drop-off depot for gathered wood, stone, and food."
+		"description": "Склад на 600 единиц. Рабочие доставляют сюда груз; наполнение отсеков видно на модели."
 	},
 	BuildingType.WALL: {
 		"name": "Wall",
@@ -89,13 +89,13 @@ const CONFIGS: Dictionary = {
 	BuildingType.WORKSHOP: {
 		"name": "Workshop",
 		"icon": "⚔️",
-		"cost": {"wood": 50, "stone": 35},
+		"cost": {"wood": 50, "stone": 15},
 		"size": Vector2i(3, 3),
 		"footprint": Vector2i(3, 3),
 		"build_time": 12.0,
 		"max_health": 600,
 		"vision_range": 8.0,
-		"description": "Military armory. Recruits armored Guards and Marksman Archers."
+		"description": "Создаёт оружие и инструменты по очереди. Меч нужен рыцарю, лук — лучнику, топор — рабочему."
 	},
 	BuildingType.MINE: {
 		"name": "Stone Mine",
@@ -106,7 +106,7 @@ const CONFIGS: Dictionary = {
 		"build_time": 8.0,
 		"max_health": 400,
 		"vision_range": 6.0,
-		"description": "Quarry pit. Workers garrison inside and extract Stone sustainably. Can upgrade to Deep Ore Mine.",
+		"description": "Шахтёру нужна кирка. Камень и железо ждут перевозчика у входа (до 60 единиц).",
 		"upgrade_cost": {"wood": 40, "stone": 30},
 		"upgrade_name": "Deep Ore Mine"
 	},
@@ -124,7 +124,7 @@ const CONFIGS: Dictionary = {
 	BuildingType.FARM: {
 		"name": "Farm", "icon": "🌾", "cost": {"wood": 35, "stone": 10},
 		"footprint": Vector2i(3, 3), "build_time": 12.0, "max_health": 250, "vision_range": 5.0,
-		"description": "Produces 12 food every 20 seconds. Requires 2 water and a completed well within 14 tiles."
+		"description": "Нужны вилы, 2 воды и колодец в 14 клетках. Урожай: 12 еды / 20 с; рабочие доставляют его на склад."
 	},
 	BuildingType.WELL: {
 		"name": "Well", "icon": "💧", "cost": {"wood": 15, "stone": 25},

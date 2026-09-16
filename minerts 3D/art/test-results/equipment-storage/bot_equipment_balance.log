@@ -1,0 +1,61 @@
+Godot Engine v4.7.stable.official.5b4e0cb0f - https://godotengine.org
+
+ERROR: Condition "ret != noErr" is true. Returning: ""
+   at: get_system_ca_certificates (platform/macos/os_macos.mm:1035)
+BOT STATE @ 30 s: buildings [1, 6, 2] units [] wallet { "wood": 141, "stone": 55, "food": 180, "ore": 17, "water": 0 } population 11
+UNFINISHED: 7 at (402.0, 2.0, 77.0) progress 87.5
+NEEDED: 8 center (402.5, 2.0, 80.5)
+BOT STATE @ 60 s: buildings [1, 6, 2, 7, 8] units [15] wallet { "wood": 275, "stone": 14, "food": 138, "ore": 17, "water": 0, "axe": 1, "pickaxe": 0, "sword": 0 } population 12
+NEEDED: 10 center (402.5, 2.0, 80.5)
+BOT STATE @ 90 s: buildings [1, 6, 2, 7, 8] units [15, 16, 17] wallet { "wood": 311, "stone": 16, "food": 56, "ore": 15, "water": 0, "axe": 0, "pickaxe": 0, "sword": 0, "bow": 0, "spear": 0 } population 16
+NEEDED: 10 center (402.5, 2.0, 80.5)
+BOT STATE @ 120 s: buildings [1, 6, 2, 7, 8] units [15, 16, 17, 18] wallet { "wood": 441, "stone": 7, "food": 38, "ore": 15, "water": 0, "axe": 0, "pickaxe": 0, "sword": 0, "bow": 1, "spear": 0 } population 18
+UNFINISHED: 10 at (409.0, 2.0, 77.0) progress 37.0
+NEEDED: 9 center (402.5, 2.0, 80.5)
+BOT STATE @ 150 s: buildings [1, 6, 2, 7, 8, 10, 9] units [15, 16, 17, 18, 19] wallet { "wood": 461, "stone": 4, "food": 50, "ore": 8, "water": 8, "axe": 1, "pickaxe": 0, "sword": 0, "bow": 0, "spear": 1, "pitchfork": 0 } population 20
+UNFINISHED: 9 at (410.5, 2.0, 80.5) progress 71.2499999999999
+NEEDED: 11 center (402.5, 2.0, 80.5)
+BOT STATE @ 180 s: buildings [1, 6, 2, 7, 8, 10, 9] units [15, 16, 17, 18, 19] wallet { "wood": 581, "stone": 22, "food": 124, "ore": 8, "water": 16, "axe": 1, "pickaxe": 0, "sword": 0, "bow": 0, "spear": 1, "pitchfork": 0 } population 21
+NEEDED: 11 center (402.5, 2.0, 80.5)
+BOT STATE @ 210 s: buildings [1, 6, 2, 7, 8, 10, 9] units [15, 16, 17, 18, 19] wallet { "wood": 569, "stone": 1, "food": 232, "ore": 8, "water": 22, "axe": 1, "pickaxe": 0, "sword": 0, "bow": 0, "spear": 1, "pitchfork": 0 } population 21
+UNFINISHED: 11 at (436.5, 1.0, 114.0) progress 28.125
+UNFINISHED: 5 at (396.0, 2.0, 74.0) progress 2.77777777777778
+NEEDED: 9 center (402.5, 2.0, 80.5)
+BOT STATE @ 240 s: buildings [1, 6, 2, 7, 8, 10, 9, 5, 11] units [15, 16, 17, 18, 19] wallet { "wood": 618, "stone": 20, "food": 256, "ore": 8, "water": 28, "axe": 0, "pickaxe": 0, "sword": 0, "bow": 0, "spear": 1, "pitchfork": 0 } population 18
+NEEDED: 5 center (402.5, 2.0, 80.5)
+BOT STATE @ 270 s: buildings [1, 6, 2, 7, 8, 10, 9, 5, 11] units [15, 16, 17, 18, 19] wallet { "wood": 593, "stone": 5, "food": 243, "ore": 5, "water": 32, "axe": 1, "pickaxe": 0, "sword": 0, "bow": 0, "spear": 0, "pitchfork": 0 } population 19
+NEEDED: <null> center (402.5, 2.0, 80.5)
+BOT STATE @ 300 s: buildings [1, 6, 2, 7, 8, 10, 9, 5, 11] units [15, 16, 17, 18, 19, 20] wallet { "wood": 567, "stone": 9, "food": 195, "ore": 5, "water": 34, "axe": 0, "pickaxe": 0, "sword": 0, "bow": 0, "spear": 0, "pitchfork": 0 } population 16
+NEEDED: <null> center (402.5, 2.0, 80.5)
+BOT STATE @ 330 s: buildings [1, 6, 2, 7, 8, 10, 9, 5, 11] units [15, 16, 17, 18, 19, 20] wallet { "wood": 428, "stone": 12, "food": 174, "ore": 3, "water": 38, "axe": 1, "pickaxe": 0, "sword": 0, "bow": 0, "spear": 0, "pitchfork": 0 } population 19
+NEEDED: <null> center (402.5, 2.0, 80.5)
+BOT STATE @ 360 s: buildings [1, 6, 2, 7, 8, 10, 9, 5, 11] units [15, 16, 17, 18, 19, 20, 22] wallet { "wood": 503, "stone": 35, "food": 282, "ore": 3, "water": 40, "axe": 1, "pickaxe": 0, "sword": 0, "bow": 1, "spear": 0, "pitchfork": 0 } population 22
+NEEDED: <null> center (402.5, 2.0, 80.5)
+BOT STATE @ 390 s: buildings [1, 6, 2, 7, 8, 10, 9, 5, 11] units [15, 16, 17, 18, 19, 20, 22] wallet { "wood": 583, "stone": 57, "food": 388, "ore": 3, "water": 44, "axe": 1, "pickaxe": 0, "sword": 0, "bow": 1, "spear": 0, "pitchfork": 0 } population 22
+NEEDED: <null> center (402.5, 2.0, 80.5)
+BOT STATE @ 420 s: buildings [1, 6, 2, 7, 8, 10, 9, 5, 11] units [15, 16, 17, 18, 19, 20, 22] wallet { "wood": 530, "stone": 53, "food": 432, "ore": 10, "water": 46, "axe": 1, "pickaxe": 0, "sword": 0, "bow": 0, "spear": 0, "pitchfork": 0 } population 22
+NEEDED: <null> center (402.5, 2.0, 80.5)
+PASS: AI worker physically completes the barracks
+PASS: AI establishes its irrigated food economy
+PASS: AI develops a coastal port
+PASS: AI replenishes its workforce through timed recruitment
+PASS: AI produces all five military roles through the real queue
+PASS: AI units explore their island
+PASS: night monsters actually engage the goblin settlement
+PASS: goblin settlement survives a complete night
+PASS: workers deliver enough resources for sustained development
+WORKER: (54.41099, 3.0, 238.8304) state 8 order 2 target @StaticBody3D@4737:<StaticBody3D#5126865834701> inventory { "type": "wood", "amount": 14 }
+WORKER: (49.50001, 2.0, 245.315) state 1 order 2 target Tree_163:<StaticBody3D#4542532163139> inventory { "type": "", "amount": 0 }
+WORKER: (50.15602, 3.0, 237.5076) state 2 order 2 target Tree_153:<StaticBody3D#4541693302289> inventory { "type": "", "amount": 0 }
+WORKER: (408.5671, 2.0, 70.16644) state 1 order 2 target Tree_2085:<StaticBody3D#4703761218509> inventory { "type": "", "amount": 0 }
+WORKER: (402.0, 2.0, 77.0) state 9 order 0 target @StaticBody3D@5268:<StaticBody3D#5187834239665> inventory { "type": "", "amount": 0 }
+WORKER: (402.0, 2.0, 77.0) state 9 order 0 target @StaticBody3D@5268:<StaticBody3D#5187834239665> inventory { "type": "", "amount": 0 }
+WORKER: (408.1873, 2.0, 70.6493) state 1 order 2 target Tree_2105:<StaticBody3D#4705438940209> inventory { "type": "", "amount": 0 }
+WORKER: (408.2177, 4.0, 68.71779) state 8 order 2 target @StaticBody3D@5269:<StaticBody3D#5194243136259> inventory { "type": "wood", "amount": 14 }
+WORKER: (408.5, 3.0, 69.5) state 8 order 2 target @StaticBody3D@5269:<StaticBody3D#5194243136259> inventory { "type": "wood", "amount": 14 }
+WORKER: (408.5, 3.0, 69.5) state 8 order 2 target @StaticBody3D@5269:<StaticBody3D#5194243136259> inventory { "type": "wood", "amount": 8 }
+WORKER: (393.6014, 2.0, 82.82958) state 2 order 2 target Bush_1904:<StaticBody3D#4688577837124> inventory { "type": "food", "amount": 6 }
+WORKER: (414.8345, 4.0, 67.5) state 2 order 2 target Tree_2037:<StaticBody3D#4699734686429> inventory { "type": "wood", "amount": 6 }
+WORKER: (401.5, 2.0, 82.60895) state 0 order 0 target <null> inventory { "type": "", "amount": 0 }
+DELIVERED WOOD: 1354
+SIMULATION CHECKS: 9 | FAILURES: 0

@@ -8,16 +8,37 @@ extends Node3D
 var resources: Dictionary = {} # id -> node
 var pois: Dictionary = {}
 
-func spawn_world_resources(grid_mgr: GridManager, container: Node3D) -> void:
+func spawn_world_resources(grid_mgr: GridManager, container: Node3D, terrain_gen: TerrainGenerator = null) -> void:
 	var rng: RandomNumberGenerator = RandomNumberGenerator.new()
 	rng.seed = 42
 
 	var res_counter: int = 0
 
+	var spawns: Array = []
+	var treasures: Array = []
+	if terrain_gen and not terrain_gen.world_info.is_empty():
+		spawns = terrain_gen.world_info.get("spawns", [])
+		treasures = terrain_gen.world_info.get("treasures", [])
+	elif container.has_node("TerrainGenerator"):
+		var tg: TerrainGenerator = container.get_node("TerrainGenerator")
+		if not tg.world_info.is_empty():
+			spawns = tg.world_info.get("spawns", [])
+			treasures = tg.world_info.get("treasures", [])
+
+	if spawns.is_empty():
+		spawns = [Vector2i(96, 96), Vector2i(402, 80)]
+
 	for x in range(4, GridManager.GRID_SIZE - 4):
 		for z in range(4, GridManager.GRID_SIZE - 4):
-			# Leave central base clearing free (around 64, 64)
-			if (absi(x - GridManager.CENTER) <= 9 and absi(z - GridManager.CENTER) <= 9) or (absi(x-402)<=19 and absi(z-80)<=19):
+			# Leave participant base clearings free (radius 6 around each spawn)
+			var in_base_clearing: bool = false
+			for s in spawns:
+				var sx: int = s[0] if s is Array else s.x
+				var sz: int = s[1] if s is Array else s.y
+				if absi(x - sx) <= 6 and absi(z - sz) <= 6:
+					in_base_clearing = true
+					break
+			if in_base_clearing:
 				continue
 
 			# Leave altar areas free (radius 3 around each altar)
@@ -31,10 +52,6 @@ func spawn_world_resources(grid_mgr: GridManager, container: Node3D) -> void:
 
 			var tile: Tile = grid_mgr.get_tile(x, z)
 			if not tile or not tile.walkable:
-				continue
-
-			# Keep approach valleys and river crossings navigable.
-			if absi(x - GridManager.CENTER) <= 2 or absi(z - GridManager.CENTER) <= 2 or (absi(x-402)<=2 or absi(z-80)<=2):
 				continue
 
 			if tile.biome == Tile.Biome.FOREST or tile.biome == Tile.Biome.MARSH:
@@ -109,18 +126,90 @@ func spawn_world_resources(grid_mgr: GridManager, container: Node3D) -> void:
 					resources[bush_body.name] = bush_body
 					res_counter += 1
 
-	# Spawn 4 POI Treasure Chests across island
-	var chest_coords: Array[Vector2i] = [
-		Vector2i(52, 52),
-		Vector2i(140, 52),
-		Vector2i(52, 140),
-		Vector2i(140, 140)
-	]
+	# Guaranteed starter resources near each participant spawn (radius 7 to 9)
+	for s in spawns:
+		var sx: int = s[0] if s is Array else s.x
+		var sz: int = s[1] if s is Array else s.y
+		# 4 starter trees
+		var starter_tree_offsets: Array = [Vector2i(-7, -7), Vector2i(-7, 7), Vector2i(7, -7), Vector2i(7, 7)]
+		for off in starter_tree_offsets:
+			var tx: int = sx + off.x
+			var tz: int = sz + off.y
+			var t_tile: Tile = grid_mgr.get_tile(tx, tz)
+			if t_tile and t_tile.walkable and t_tile.resource_id == "":
+				var tree_body: StaticBody3D = StaticBody3D.new()
+				tree_body.name = "Tree_starter_%d" % res_counter
+				tree_body.collision_layer = 8
+				tree_body.collision_mask = 0
+				var tree_mesh: Node3D = VoxelMeshFactory.create_tree_mesh("pine")
+				tree_body.add_child(tree_mesh)
+				var col: CollisionShape3D = CollisionShape3D.new()
+				var box: BoxShape3D = BoxShape3D.new()
+				box.size = Vector3(1.2, 2.6, 1.2)
+				col.shape = box
+				col.position = Vector3(0, 1.3, 0)
+				tree_body.add_child(col)
+				tree_body.position = Vector3(float(tx) + 0.5, float(t_tile.height), float(tz) + 0.5)
+				tree_body.set_meta("resource_type", "wood")
+				tree_body.set_meta("resource_amount", 50)
+				tree_body.set_meta("health", 5.0)
+				tree_body.set_meta("max_health", 5.0)
+				tree_body.set_meta("grid_x", tx)
+				tree_body.set_meta("grid_z", tz)
+				tree_body.set_meta("res_id", tree_body.name)
+				container.add_child(tree_body)
+				t_tile.resource_id = tree_body.name
+				t_tile.walkable = false
+				resources[tree_body.name] = tree_body
+				res_counter += 1
 
-	var world_data: Dictionary = JSON.parse_string(FileAccess.get_file_as_string("res://assets/frontier/island.json"))
-	for coords in world_data.get("treasures",[]):
-		var position: Vector3 = grid_mgr.find_free_position(Vector3(coords[0],0,coords[1]))
-		chest_coords.append(Vector2i(floori(position.x),floori(position.z)))
+		# 2 starter berry bushes
+		var starter_bush_offsets: Array = [Vector2i(-7, 0), Vector2i(0, -7)]
+		for off in starter_bush_offsets:
+			var bx: int = sx + off.x
+			var bz: int = sz + off.y
+			var b_tile: Tile = grid_mgr.get_tile(bx, bz)
+			if b_tile and b_tile.walkable and b_tile.resource_id == "":
+				var bush_body: StaticBody3D = StaticBody3D.new()
+				bush_body.name = "Bush_starter_%d" % res_counter
+				bush_body.collision_layer = 8
+				bush_body.collision_mask = 0
+				var bush_mesh: Node3D = VoxelMeshFactory.create_bush_mesh()
+				bush_body.add_child(bush_mesh)
+				var col: CollisionShape3D = CollisionShape3D.new()
+				var box: BoxShape3D = BoxShape3D.new()
+				box.size = Vector3(1.0, 1.0, 1.0)
+				col.shape = box
+				col.position = Vector3(0, 0.5, 0)
+				bush_body.add_child(col)
+				bush_body.position = Vector3(float(bx) + 0.5, float(b_tile.height), float(bz) + 0.5)
+				bush_body.set_meta("resource_type", "food")
+				bush_body.set_meta("resource_amount", 30)
+				bush_body.set_meta("health", 4.0)
+				bush_body.set_meta("max_health", 4.0)
+				bush_body.set_meta("grid_x", bx)
+				bush_body.set_meta("grid_z", bz)
+				bush_body.set_meta("res_id", bush_body.name)
+				container.add_child(bush_body)
+				b_tile.resource_id = bush_body.name
+				b_tile.walkable = false
+				resources[bush_body.name] = bush_body
+				res_counter += 1
+
+	# Spawn Treasure Chests on Central Island
+	var chest_coords: Array[Vector2i] = []
+	if treasures.is_empty():
+		treasures = [
+			[234, 238],
+			[280, 236],
+			[238, 280],
+			[278, 276],
+			[256, 256]
+		]
+	for coords in treasures:
+		var position: Vector3 = grid_mgr.find_free_position(Vector3(coords[0], 0, coords[1]))
+		chest_coords.append(Vector2i(floori(position.x), floori(position.z)))
+
 	for i in range(chest_coords.size()):
 		var c_pos: Vector2i = chest_coords[i]
 		var t: Tile = grid_mgr.get_tile(c_pos.x, c_pos.y)
@@ -148,6 +237,7 @@ func spawn_world_resources(grid_mgr: GridManager, container: Node3D) -> void:
 			pois[chest_body.name] = chest_body
 			t.resource_id = chest_body.name
 			t.walkable = false
+
 
 func remove_resource(node: Node) -> void:
 	if node and resources.has(node.name):

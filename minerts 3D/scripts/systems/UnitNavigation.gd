@@ -42,7 +42,7 @@ func tick(delta: float) -> void:
 			# Start approaching even when a displaced ally occupies the slot. Waiting
 			# for it to become empty would deadlock cyclic exchanges of positions.
 			var goal: Vector3 = yield_return
-			var route: Array[Vector3] = unit.grid_manager.find_unit_path(unit,goal,true)
+			var route: Array[Vector3] = unit.grid_manager.find_unit_path(unit,goal,false,false)
 			if not route.is_empty():
 				unit.set_path(route);unit.state=UnitConfigs.UnitState.MOVING
 	if unit.path.is_empty() or not unit.is_alive or unit.state==UnitConfigs.UnitState.MINING_INSIDE:return

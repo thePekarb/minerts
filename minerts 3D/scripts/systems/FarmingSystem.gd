@@ -12,6 +12,12 @@ func tick(delta: float, buildings: Array[Building]) -> void:
 				FactionEconomy.add(building.faction,"water", 2)
 			building.production_status = "Вода +2 / 5 с"
 		elif building.building_type == BuildingConfigs.BuildingType.FARM:
+			if not building.farm_equipped:
+				if not FactionEconomy.spend(building.faction,{"pitchfork":1}):
+					building.production_status="Нужны вилы из мастерской";_update_label(building);continue
+				building.farm_equipped=true
+			if building.buffered_amount()>36:
+				building.production_status="Урожай ожидает перевозчика";_update_label(building);continue
 			var well: Building = find_well(building, buildings)
 			if well == null:
 				building.production_status = "Нужен колодец рядом (14 клеток)"
@@ -22,20 +28,23 @@ func tick(delta: float, buildings: Array[Building]) -> void:
 				building.production_status = "Урожай %d%%" % int(building.production_timer * 5.0)
 				if building.production_timer >= 20.0 and FactionEconomy.spend(building.faction,{"water": 2}):
 					building.production_timer -= 20.0
-					FactionEconomy.add(building.faction,"food", 12)
+					building.output_buffer["food"]=building.output_buffer.get("food",0)+12
 					SoundManager.play_eat_apple()
 			if building.crop_plants:
 				building.crop_plants.scale.y = lerpf(0.12, 1.0, clampf(building.production_timer / 20.0, 0, 1))
 		else:
 			continue
-		if building.production_label == null:
-			building.production_label = Label3D.new()
-			building.production_label.billboard = BaseMaterial3D.BILLBOARD_ENABLED
-			building.production_label.position.y = 2.7
-			building.production_label.font_size = 24
-			building.production_label.pixel_size = 0.009
-			building.add_child(building.production_label)
-		building.production_label.text = building.production_status
+		_update_label(building)
+
+func _update_label(building: Building) -> void:
+	if building.production_label == null:
+		building.production_label = Label3D.new()
+		building.production_label.billboard = BaseMaterial3D.BILLBOARD_ENABLED
+		building.production_label.position.y = 2.7
+		building.production_label.font_size = 24
+		building.production_label.pixel_size = 0.009
+		building.add_child(building.production_label)
+	building.production_label.text = building.production_status
 
 func find_well(farm: Building, buildings: Array[Building]) -> Building:
 	var best: Building

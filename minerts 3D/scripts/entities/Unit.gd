@@ -54,6 +54,16 @@ var assigned_lumber_zone_id: String = ""
 var mining_building_id: String = ""
 var grid_manager: GridManager = null
 
+# Tower garrison and stance orders
+var garrisoned_tower: Building = null
+var original_vision_range: float = -1.0
+var original_attack_range: float = -1.0
+var hold_position_anchor: Vector3 = Vector3.INF
+var patrol_start: Vector3 = Vector3.INF
+var patrol_end: Vector3 = Vector3.INF
+var patrol_to_end: bool = true
+var patrol_wait_timer: float = 0.0
+
 # Model and animation references
 var model_root: Node3D = null
 var anim_player: AnimationPlayer = null
@@ -212,6 +222,50 @@ func ungarrison_from_building(exit_pos: Vector3) -> void:
 	collision_mask = 2 | 4
 	set_selected(false)
 
+func garrison_in_tower(tower: Building) -> void:
+	stop()
+	garrisoned_tower = tower
+	original_vision_range = config.get("vision_range", 8.0)
+	original_attack_range = attack_range
+	config["vision_range"] = 14.0
+	attack_range = 11.0
+	state = UnitConfigs.UnitState.DEFENDING
+	current_order = UnitConfigs.UnitOrder.HOLD_POSITION
+	hold_position_anchor = tower.global_position + Vector3(0, 2.1, 0)
+	global_position = hold_position_anchor
+	previous_position = hold_position_anchor
+	visible = true
+	collision_layer = 2
+	collision_mask = 0
+	if selection_ring:
+		selection_ring.visible = false
+
+func ungarrison_from_tower() -> void:
+	if not is_instance_valid(garrisoned_tower):
+		garrisoned_tower = null
+		return
+	var tower: Building = garrisoned_tower
+	garrisoned_tower = null
+	if original_vision_range > 0.0:
+		config["vision_range"] = original_vision_range
+	if original_attack_range > 0.0:
+		attack_range = original_attack_range
+	collision_layer = 2
+	collision_mask = 2 | 4
+	var exit_pos: Vector3 = tower.global_position
+	if grid_manager:
+		exit_pos = grid_manager.find_free_position(tower.global_position)
+		exit_pos.y = grid_manager.get_height(exit_pos.x, exit_pos.z)
+		grid_manager.unit_index.invalidate()
+	global_position = exit_pos
+	previous_position = exit_pos
+	state = UnitConfigs.UnitState.IDLE
+	current_order = UnitConfigs.UnitOrder.MOVE
+	target = null
+	path.clear()
+	waypoint_index = 0
+	velocity = Vector3.ZERO
+
 func set_path(new_path: Array[Vector3]) -> void:
 	route_version+=1
 	if navigation:navigation.yield_return=Vector3.INF
@@ -260,8 +314,10 @@ func _physics_process(delta: float) -> void:
 	if UnitConfigs.is_vessel(unit_type):
 		_physics_ship(delta)
 		return
-	if not is_alive or state == UnitConfigs.UnitState.MINING_INSIDE or fuse_timer>=0.0:
+	if not is_alive or state == UnitConfigs.UnitState.MINING_INSIDE or fuse_timer>=0.0 or is_instance_valid(garrisoned_tower):
 		velocity=Vector3.ZERO;navigation.actual_speed=0.0
+		if is_instance_valid(garrisoned_tower):
+			global_position = garrisoned_tower.global_position + Vector3(0, 2.1, 0)
 		_update_animation_and_tools(delta)
 		return
 	var before: Vector3 = position

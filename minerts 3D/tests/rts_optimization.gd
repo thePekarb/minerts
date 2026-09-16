@@ -63,6 +63,7 @@ func _ready() -> void:
 	freed.free()
 	check(grid.unit_index.query(get_tree(),old_pos,6).all(func(u):return is_instance_valid(u)),"freed units in a snapshot are safely ignored")
 	units[1].underground_unit = true
+	units[0].set_path([units[0].position+Vector3.RIGHT])
 	units[0].navigation.tick(.2)
 	check(not units[0].navigation.nearby.has(units[1]) and units[0].navigation.nearby.has(units[2]),"local navigation separates underground actors from surface neighbors")
 	units[2].ungarrison_from_building(Vector3(490.5,0,490.5))

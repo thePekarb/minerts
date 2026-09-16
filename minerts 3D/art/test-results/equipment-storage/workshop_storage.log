@@ -1,0 +1,33 @@
+Godot Engine v4.7.stable.official.5b4e0cb0f - https://godotengine.org
+
+ERROR: Condition "ret != noErr" is true. Returning: ""
+   at: get_system_ca_certificates (platform/macos/os_macos.mm:1035)
+PASS: workshop accepts a sword order
+PASS: workshop cannot recruit soldiers
+PASS: knight is blocked without a completed sword
+PASS: weapon production requires time
+PASS: one completed sword enters physical storage
+PASS: one knight reserves exactly one sword
+PASS: the reserved sword cannot be used twice
+PASS: cancelled recruitment returns the sword
+PASS: cancelled crafting refunds ingredients once
+PASS: partial delivery fills the warehouse and preserves excess cargo
+PASS: full warehouses leave the carrier waiting with its cargo
+PASS: a new warehouse attracts waiting carriers
+PASS: remaining food is delivered to the new warehouse
+PASS: spending removes the same resources from visible stock and wallet
+PASS: warehouse cargo is visible in separate model bays
+PASS: goblins also need a completed bow
+PASS: goblin recruitment consumes its own crafted bow
+PASS: workshop panel exposes all six real recipes
+PASS: barracks panel exposes the correct unit roster
+PASS: Blender warehouse exposes all 27 independently visible stock groups
+PASS: completed tools wait in the workshop when storage is full
+PASS: freeing one storage slot admits exactly one completed tool
+PASS: completed production cannot grant duplicate tools
+PASS: refunds remain pending when every warehouse is full
+PASS: pending refunds are restored as soon as capacity is freed
+PASS: visible recipe plus button queues a paid production order
+PASS: visible queue card cancels its order
+PASS: destroying the selected workshop closes its production window
+WORKSHOP STORAGE CHECKS: 28 | FAILURES: 0

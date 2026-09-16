@@ -1,0 +1,17 @@
+Godot Engine v4.7.stable.official.5b4e0cb0f - https://godotengine.org
+
+ERROR: Condition "ret != noErr" is true. Returning: ""
+   at: get_system_ca_certificates (platform/macos/os_macos.mm:1035)
+PASS: all twelve building cards remain available
+PASS: resource category filters the live building catalog
+PASS: illustrated hut card starts actual construction placement
+PASS: worker selection opens the live portrait inspector
+PASS: gather action arms a real contextual order
+PASS: carry command returns existing cargo to storage
+PASS: cancel stops the order without losing the carried resource
+PASS: dig command opens the underground view
+PASS: performance setting scales only the 3D viewport
+PASS: pause keeps its resume control interactive
+PASS: resume restores simulation
+PASS: new inspector preserves production controls
+HUD CONTROLS CHECKS: 12 | FAILURES: 0

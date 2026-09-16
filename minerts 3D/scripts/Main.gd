@@ -33,12 +33,18 @@ var production_system: ProductionSystem
 var transport_system: TransportSystem
 var goblin_ai: GoblinAISystem
 var fog_system: FogOfWarSystem
+var terraforming_system: TerraformingSystem
 
 var all_units: Array[Unit] = []
 var all_buildings: Array[Building] = []
 var guardian_system: GuardianSystem
 var simulation_accumulator: float = 0.0
 var last_system_usec: Dictionary = {}
+var storage_system: StorageSystem
+var workshop_system: WorkshopSystem
+var network_session: NetworkGameSession
+var touch_controls: TouchRTSController
+var responsive_hud: ResponsiveHUD
 var prop_batches: WorldPropBatches
 var unit_visuals: UnitVisualSystem
 
@@ -46,8 +52,17 @@ var unit_visuals: UnitVisualSystem
 var is_left_mouse_down: bool = false
 var left_mouse_start: Vector2 = Vector2.ZERO
 var is_marquee_dragging: bool = false
+var is_demolish_mode: bool = false
+var hovered_demolish_building: Building = null
 
 func _ready() -> void:
+	if NetworkManager.in_match:
+		FactionEconomy.storage=null
+		FactionEconomy.wallets.clear()
+		EconomyManager.resources={"wood":120,"stone":60,"food":120,"ore":20,"water":0,"pop":0,"max_pop":10}
+		for slot in GameSettings.get_active_slots():
+			if slot.get("type")=="player" and slot.get("peer_id",1)!=1:
+				FactionEconomy.wallets[NetworkManager.faction_for_peer(slot.peer_id)]=EconomyManager.resources.duplicate()
 	_init_core_world()
 	_init_systems()
 	_spawn_initial_base()
@@ -66,9 +81,16 @@ func _ready() -> void:
 	add_child(interaction_feedback)
 	interaction_feedback.setup(self)
 	goblin_ai=GoblinAISystem.new();add_child(goblin_ai);goblin_ai.setup(self)
+	storage_system=StorageSystem.new();add_child(storage_system);storage_system.setup(self)
+	workshop_system=WorkshopSystem.new();add_child(workshop_system);workshop_system.setup(self)
 	guardian_system=GuardianSystem.new();add_child(guardian_system);guardian_system.setup(self)
 	fog_system.update_fog(all_units, all_buildings, 0.3)
 	unit_visuals=UnitVisualSystem.new();add_child(unit_visuals);unit_visuals.setup(self)
+	touch_controls=TouchRTSController.new();add_child(touch_controls);touch_controls.setup(self)
+	responsive_hud=ResponsiveHUD.new();add_child(responsive_hud);responsive_hud.setup(self)
+	if NetworkManager.in_match:
+		network_session=NetworkGameSession.new();add_child(network_session);network_session.setup(self)
+
 
 func _init_core_world() -> void:
 	# 1. Grid Manager
@@ -77,22 +99,31 @@ func _init_core_world() -> void:
 
 	# 2. Terrain Generator
 	terrain_generator = TerrainGenerator.new()
+	terrain_generator.noise_seed = GameSettings.seed_val
 	world_container.add_child(terrain_generator)
 	terrain_generator.generate_terrain(grid_manager)
 
 	# 3. Resource Spawner
 	resource_spawner = ResourceSpawner.new()
 	world_container.add_child(resource_spawner)
-	resource_spawner.spawn_world_resources(grid_manager, world_container)
+	resource_spawner.spawn_world_resources(grid_manager, world_container, terrain_generator)
 	var environment_details: EnvironmentDetails = EnvironmentDetails.new()
 	world_container.add_child(environment_details)
 	environment_details.populate(grid_manager)
 	grid_manager.rebuild_astar()
 
-	# 5. Camera terrain tracking
+	# 5. Camera terrain tracking (focused on local player's island)
 	camera.set_terrain(terrain_generator)
-	camera.target_focus = Vector3(96.0, terrain_generator.get_height_at(96.0, 96.0), 96.0)
+	var local_slot_idx: int = GameSettings.get_local_player_slot_index()
+	var participant_spawns: Array = terrain_generator.world_info.get("spawns", [])
+	var local_spawn := Vector2i(96, 96)
+	if local_slot_idx < participant_spawns.size():
+		var s_val = participant_spawns[local_slot_idx]
+		local_spawn = Vector2i(s_val[0], s_val[1]) if s_val is Array else s_val
+	var focus_y: float = terrain_generator.get_height_at(float(local_spawn.x), float(local_spawn.y))
+	camera.target_focus = Vector3(float(local_spawn.x) + 0.5, focus_y, float(local_spawn.y) + 0.5)
 	SoundManager.set_camera(camera)
+
 
 func _init_systems() -> void:
 	# Selection
@@ -108,12 +139,20 @@ func _init_systems() -> void:
 	# Gathering
 	gathering_system = GatheringSystem.new()
 	add_child(gathering_system)
-	gathering_system.init_gathering(grid_manager, resource_spawner)
+	gathering_system.init_gathering(grid_manager, resource_spawner, construction_system)
 
 	# Lumber Zones
 	lumber_zone_system = LumberZoneSystem.new()
 	add_child(lumber_zone_system)
 	lumber_zone_system.init_lumber_zones(camera, grid_manager, resource_spawner, zones_container)
+
+	# Terraforming (Digging Blocks)
+	terraforming_system = TerraformingSystem.new()
+	add_child(terraforming_system)
+	terraforming_system.init_system(grid_manager, terrain_generator, camera, resource_spawner, hud)
+
+	selection_system.lumber_zone_system = lumber_zone_system
+	selection_system.terraforming_system = terraforming_system
 
 	# Combat
 	combat_system = CombatSystem.new()
@@ -124,17 +163,24 @@ func _init_systems() -> void:
 	raid_system = RaidSystem.new()
 	add_child(raid_system)
 	raid_system.init_raid(grid_manager, units_container, world_container)
+	if not GameSettings.night_wave_enabled:
+		raid_system.set_process(false)
 
 	# Time of Day
 	time_of_day_system = TimeOfDaySystem.new()
 	add_child(time_of_day_system)
 	time_of_day_system.init_lighting(sun_light, world_environment)
+	if not GameSettings.day_night_enabled:
+		time_of_day_system.set_process(false)
 
 	# Fog of War
 	fog_system = FogOfWarSystem.new()
 	add_child(fog_system)
 	fog_system.init_fog(grid_manager)
 	fog_system.apply_world_materials(world_container)
+	if not GameSettings.fog_enabled:
+		fog_system.set_fog_enabled(false)
+
 	if DisplayServer.get_name()!="headless":
 		prop_batches=WorldPropBatches.new();add_child(prop_batches);prop_batches.setup(resource_spawner.resources)
 
@@ -148,31 +194,91 @@ func _init_systems() -> void:
 	EventBus.building_placed.connect(func(b): all_buildings.append(b))
 
 func _spawn_initial_base() -> void:
-	# Spawn central Campfire at (96, 96)
+	var local_slot_idx: int = GameSettings.get_local_player_slot_index()
+	var participant_spawns: Array = terrain_generator.world_info.get("spawns", [])
+	var local_spawn := Vector2i(96, 96)
+	if local_slot_idx < participant_spawns.size():
+		var s_val = participant_spawns[local_slot_idx]
+		local_spawn = Vector2i(s_val[0], s_val[1]) if s_val is Array else s_val
+
+	var my_faction: String = "player" if NetworkManager.in_match else GameSettings.player_faction
+	var is_goblin_player: bool = (GameSettings.player_faction == "goblin")
+	var worker_type: UnitConfigs.UnitType = UnitConfigs.UnitType.GOBLIN_WORKER if is_goblin_player else UnitConfigs.UnitType.WORKER
+	var warrior_type: UnitConfigs.UnitType = UnitConfigs.UnitType.GOBLIN_WARRIOR if is_goblin_player else UnitConfigs.UnitType.WARRIOR
+	var archer_type: UnitConfigs.UnitType = UnitConfigs.UnitType.GOBLIN_ARCHER if is_goblin_player else UnitConfigs.UnitType.ARCHER
+
+	# Spawn central Campfire on local player's island
 	var camp: Building = Building.new()
+	camp.faction = my_faction
 	buildings_container.add_child(camp)
-	var camp_y: float = grid_manager.get_height(96.5, 96.5)
-	camp.global_position = Vector3(97.0, camp_y, 97.0)
-	camp.init_building(BuildingConfigs.BuildingType.CAMPFIRE, 96, 96, true)
-	grid_manager.occupy_area(96, 96, 2, 2, camp)
+	var camp_y: float = grid_manager.get_height(float(local_spawn.x) + 0.5, float(local_spawn.y) + 0.5)
+	camp.global_position = Vector3(float(local_spawn.x) + 1.0, camp_y, float(local_spawn.y) + 1.0)
+	camp.init_building(BuildingConfigs.BuildingType.CAMPFIRE, local_spawn.x, local_spawn.y, true)
+	grid_manager.occupy_area(local_spawn.x, local_spawn.y, 2, 2, camp)
 	all_buildings.append(camp)
 	gathering_system.register_storage(camp)
 	EventBus.building_constructed.emit(camp)
 
 	# Spawn 3 starting Workers
 	var worker_offsets: Array[Vector3] = [
-		Vector3(94.5, 0, 95.5),
-		Vector3(98.5, 0, 95.5),
-		Vector3(96.5, 0, 98.5)
+		Vector3(-1.5, 0, -0.5),
+		Vector3(2.5, 0, -0.5),
+		Vector3(0.5, 0, 2.5)
 	]
-	for pos in worker_offsets:
-		spawn_unit(UnitConfigs.UnitType.WORKER, "player", pos)
+	for off in worker_offsets:
+		spawn_unit(worker_type, my_faction, camp.global_position + off)
 
-	# Spawn starting Knight Warrior defender
-	spawn_unit(UnitConfigs.UnitType.WARRIOR, "player", Vector3(96.5, 0, 93.5))
+	# Spawn starting Warrior defender
+	spawn_unit(warrior_type, my_faction, camp.global_position + Vector3(0.5, 0, -2.5))
 
-	# Spawn starting Archer Marksman defender
-	spawn_unit(UnitConfigs.UnitType.ARCHER, "player", Vector3(98.5, 0, 93.5))
+	# Spawn starting Archer defender
+	spawn_unit(archer_type, my_faction, camp.global_position + Vector3(2.5, 0, -2.5))
+
+	# Spawn other participants on their respective islands
+	_spawn_lobby_participants(local_slot_idx, participant_spawns)
+
+func _spawn_lobby_participants(local_idx: int, participant_spawns: Array) -> void:
+	var active_slots: Array = GameSettings.get_active_slots()
+	for i in range(active_slots.size()):
+		if i == local_idx:
+			continue
+		var slot: Dictionary = active_slots[i]
+		var s_pos := Vector2i(402, 80)
+		if i < participant_spawns.size():
+			var raw_s = participant_spawns[i]
+			s_pos = Vector2i(raw_s[0], raw_s[1]) if raw_s is Array else raw_s
+
+		var s_faction: String = NetworkManager.faction_for_peer(slot.get("peer_id",0)) if NetworkManager.in_match and slot.get("type")=="player" else slot.get("faction", "goblin")
+		var s_name: String = slot.get("name", "Участник")
+
+		# If goblin AI is managing the primary goblin island at index 1, avoid placing a duplicate campfire
+		if s_faction == "goblin" and (i==1 or NetworkManager.in_match):
+			continue
+
+		_spawn_participant_camp(s_pos, s_faction, s_name)
+
+func _spawn_participant_camp(coords: Vector2i, faction: String, _bot_name: String) -> void:
+	var camp: Building = Building.new()
+	camp.faction = faction
+	buildings_container.add_child(camp)
+	var camp_y: float = grid_manager.get_height(float(coords.x) + 0.5, float(coords.y) + 0.5)
+	camp.global_position = Vector3(float(coords.x) + 1.0, camp_y, float(coords.y) + 1.0)
+	camp.init_building(BuildingConfigs.BuildingType.CAMPFIRE, coords.x, coords.y, true)
+	grid_manager.occupy_area(coords.x, coords.y, 2, 2, camp)
+	all_buildings.append(camp)
+	fog_system.apply_world_materials(camp)
+	EventBus.building_constructed.emit(camp)
+
+	var is_gob: bool = (FactionRules.race(faction) == "goblin")
+	var w_type: UnitConfigs.UnitType = UnitConfigs.UnitType.GOBLIN_WORKER if is_gob else UnitConfigs.UnitType.WORKER
+	var f_type: UnitConfigs.UnitType = UnitConfigs.UnitType.GOBLIN_WARRIOR if is_gob else UnitConfigs.UnitType.WARRIOR
+	var a_type: UnitConfigs.UnitType = UnitConfigs.UnitType.GOBLIN_ARCHER if is_gob else UnitConfigs.UnitType.ARCHER
+
+	for offset in [Vector3(-2.5, 0, -2.5), Vector3(2.5, 0, -2.5), Vector3(-2.5, 0, 2.5)]:
+		spawn_unit(w_type, faction, camp.global_position + offset)
+	spawn_unit(f_type, faction, camp.global_position + Vector3(0, 0, 3.5))
+	spawn_unit(a_type, faction, camp.global_position + Vector3(3.5, 0, 0))
+
 
 func spawn_unit(type: UnitConfigs.UnitType, faction: String, pos: Vector3) -> Unit:
 	var unit: Unit = Unit.new()
@@ -210,8 +316,6 @@ func _on_entity_died(e: Variant) -> void:
 	if e is Unit:
 		if transport_system:transport_system.on_death(e)
 		all_units.erase(e)
-		if e.faction in ["player", "goblin"] and not UnitConfigs.is_vessel(e.unit_type):
-			SoundManager.play_male_death(e.global_position)
 		if e.faction == "enemy" and not e.get_meta("self_destructed", false):
 			var winner: String = e.get_meta("last_hit_faction","player")
 			FactionEconomy.add(winner,"wood",5);FactionEconomy.add(winner,"stone",3)
@@ -222,17 +326,24 @@ func _on_entity_died(e: Variant) -> void:
 		# Clear from lumber zones if assigned
 		for z in lumber_zone_system.zones:
 			z.assigned_workers.erase(e)
+		if terraforming_system:
+			terraforming_system.unassign_worker(e)
 		var valid_buildings: Array[Building] = []
 		for b in all_buildings:
 			if is_instance_valid(b):
 				valid_buildings.append(b)
 				if "assigned_miners" in b and b.assigned_miners is Array:
 					b.assigned_miners.erase(e)
+		if is_instance_valid(e.garrisoned_tower):
+			e.garrisoned_tower.garrisoned_archer = null
+			e.garrisoned_tower = null
 		all_buildings = valid_buildings
 	elif e is Building:
-		e.training_queue.clear()
+		e.training_queue.clear();e.crafting_queue.clear()
 		if is_instance_valid(e.rally_marker):e.rally_marker.queue_free()
 		e.eject_all_miners(grid_manager)
+		if "garrisoned_archer" in e and is_instance_valid(e.garrisoned_archer):
+			e.ungarrison_archer()
 		all_buildings.erase(e)
 		grid_manager.free_area(e.grid_x, e.grid_z, e.footprint.x, e.footprint.y)
 
@@ -287,6 +398,8 @@ func _connect_hud_events() -> void:
 		if underground_system and underground_system.cutaway:
 			hud.show_banner("Постройки размещаются на поверхности. Нажмите X.")
 			return
+		if terraforming_system and terraforming_system.is_active:
+			terraforming_system.deactivate()
 		lumber_zone_system.cancel_zone_placement()
 		construction_system.start_placement(type)
 		if type == BuildingConfigs.BuildingType.WALL:
@@ -297,6 +410,8 @@ func _connect_hud_events() -> void:
 
 	hud.lumber_zone_tool_requested.connect(func():
 		if underground_system and underground_system.cutaway: return
+		if terraforming_system and terraforming_system.is_active:
+			terraforming_system.deactivate()
 		construction_system.cancel_placement()
 		lumber_zone_system.start_zone_placement()
 	)
@@ -306,7 +421,10 @@ func _connect_hud_events() -> void:
 	)
 
 	hud.cancel_training_requested.connect(func():
-		if is_instance_valid(selection_system.selected_building) and selection_system.selected_building.faction=="player":production_system.cancel(selection_system.selected_building)
+		if is_instance_valid(selection_system.selected_building) and selection_system.selected_building.faction=="player":
+			var b: Building=selection_system.selected_building
+			if b.building_type==BuildingConfigs.BuildingType.WORKSHOP:workshop_system.cancel(b,b.crafting_queue.size()-1)
+			else:production_system.cancel(b)
 	)
 	hud.unload_requested.connect(func():
 		for u in selection_system.selected_units:
@@ -375,7 +493,14 @@ func _connect_hud_events() -> void:
 			hud.floating_badge.update_count(0, b.max_miners)
 	)
 
+	hud.floating_badge.delete_clicked.connect(func():
+		if lumber_zone_system.selected_zone:
+			lumber_zone_system.delete_zone()
+			hud.floating_badge.hide_badge()
+	)
+
 func _handle_mine_minus(b: Building) -> void:
+	if NetworkManager.route_building("mine_minus",b):return
 	if not is_instance_valid(b) or b.assigned_miners.is_empty():
 		return
 	var miner: Unit = b.assigned_miners.pop_back()
@@ -390,6 +515,7 @@ func _handle_mine_minus(b: Building) -> void:
 		hud.floating_badge.update_count(b.assigned_miners.size(), b.max_miners)
 
 func _handle_mine_plus(b: Building) -> void:
+	if NetworkManager.route_building("mine_plus",b):return
 	if not is_instance_valid(b) or b.assigned_miners.size() >= b.max_miners:
 		return
 	# Find an idle unassigned worker
@@ -404,6 +530,11 @@ func _handle_mine_plus(b: Building) -> void:
 					best_w = u
 
 	if best_w:
+		if not best_w.get_meta("mining_tool",false):
+			if not FactionEconomy.spend(best_w.faction,{"pickaxe":1}):
+				hud.show_banner("Изготовьте кирку в мастерской: одна кирка на шахтёра.");return
+			best_w.set_meta("mining_tool",true)
+		selection_system.cancel_assignments(best_w)
 		b.assigned_miners.append(best_w)
 		best_w.mining_building_id = str(b.get_instance_id())
 		best_w.target = b
@@ -418,6 +549,7 @@ func _handle_mine_plus(b: Building) -> void:
 			hud.floating_badge.update_count(b.assigned_miners.size(), b.max_miners)
 
 func _handle_mine_upgrade(b: Building) -> void:
+	if NetworkManager.route_building("mine_upgrade",b):return
 	if not is_instance_valid(b) or b.level >= 2:
 		return
 	var upgrade_cost: Dictionary = {"stone": 40, "wood": 20}
@@ -434,6 +566,37 @@ func _train_unit(type: UnitConfigs.UnitType) -> void:
 	else:
 		SoundManager.play_select()
 		SoundManager.play_eat_apple()
+
+func toggle_demolish_mode() -> void:
+	set_demolish_mode(not is_demolish_mode)
+
+func set_demolish_mode(active: bool) -> void:
+	is_demolish_mode = active
+	hovered_demolish_building = null
+	if is_demolish_mode:
+		if terraforming_system and terraforming_system.is_active:
+			terraforming_system.deactivate()
+		if construction_system.is_placing():
+			construction_system.cancel_placement()
+		if lumber_zone_system.is_placing_zone:
+			lumber_zone_system.cancel_zone_placement()
+		hud.show_banner("Режим сноса: наведите на постройку и нажмите ЛКМ для удаления (ПКМ/ESC — отмена)")
+		SoundManager.play_click()
+	else:
+		hud.show_banner("Режим сноса выключен")
+	if hud.skin and hud.skin.demolish_tool_btn:
+		hud.skin.demolish_tool_btn.text = "✕  Выйти из сноса" if is_demolish_mode else "🗑️  Снос постройки"
+
+func demolish_selected_building() -> void:
+	var b: Building = selection_system.selected_building
+	if not is_instance_valid(b) or b.faction != "player":
+		return
+	var b_name: String = b.config.get("name", "Постройка")
+	var is_c: bool = b.is_constructed
+	if construction_system.demolish_building(b, all_units):
+		selection_system.clear_selection()
+		hud._on_selection_changed(selection_system.selected_units, null)
+		hud.show_banner("%s %s" % [b_name, "снесена" if is_c else "отменена"])
 
 func _unhandled_input(event: InputEvent) -> void:
 	if event is InputEventKey:
@@ -454,11 +617,36 @@ func _unhandled_input(event: InputEvent) -> void:
 				for unit in selection_system.selected_units:
 					underground_system.request_exit(unit)
 				return
+			if key_event.physical_keycode == KEY_G or key_event.keycode == KEY_G:
+				if terraforming_system:
+					if construction_system.is_placing():
+						construction_system.cancel_placement()
+					if lumber_zone_system.is_placing_zone:
+						lumber_zone_system.cancel_zone_placement()
+					terraforming_system.toggle_dig_mode()
+					get_viewport().set_input_as_handled()
+					return
 			if key_event.keycode == KEY_O:
 				if selection_system.selected_building and selection_system.selected_building.is_gate:
 					selection_system.selected_building.toggle_gate(grid_manager)
 					hud._on_selection_changed(selection_system.selected_units, selection_system.selected_building)
+			elif key_event.physical_keycode in [KEY_DELETE, KEY_BACKSPACE] or key_event.keycode in [KEY_DELETE, KEY_BACKSPACE]:
+				if lumber_zone_system.selected_zone:
+					lumber_zone_system.delete_zone()
+					hud.floating_badge.hide_badge()
+					return
+				elif is_instance_valid(selection_system.selected_building) and selection_system.selected_building.faction == "player":
+					demolish_selected_building()
+					return
+				else:
+					toggle_demolish_mode()
+					return
 			elif key_event.keycode == KEY_ESCAPE:
+				if is_demolish_mode:
+					set_demolish_mode(false)
+					return
+				if terraforming_system and terraforming_system.is_active:
+					terraforming_system.deactivate()
 				if hud.skin:hud.skin.command("stop")
 				construction_system.cancel_placement()
 				lumber_zone_system.cancel_zone_placement()
@@ -481,6 +669,28 @@ func _unhandled_input(event: InputEvent) -> void:
 		_handle_mouse_motion(mm.position)
 
 func _handle_left_mouse_down(pos: Vector2) -> void:
+	if is_demolish_mode:
+		var hit: Dictionary = camera.raycast_objects(pos)
+		var collider: Object = hit.get("collider", null)
+		var target_b: Building = null
+		if collider is Building and collider.faction == "player":
+			target_b = collider
+		elif collider and collider.get_parent() is Building and collider.get_parent().faction == "player":
+			target_b = collider.get_parent()
+		if target_b:
+			var b_name: String = target_b.config.get("name", "Постройка")
+			var is_c: bool = target_b.is_constructed
+			interaction_feedback.show_order(target_b.global_position)
+			construction_system.demolish_building(target_b, all_units)
+			hud.show_banner("%s %s" % [b_name, "снесена" if is_c else "отменена"])
+			if not Input.is_key_pressed(KEY_SHIFT):
+				set_demolish_mode(false)
+		return
+
+	if terraforming_system and terraforming_system.is_active:
+		terraforming_system.on_mouse_down(pos)
+		return
+
 	if construction_system.is_placing():
 		construction_system.start_drag_placement(all_units)
 		return
@@ -494,6 +704,25 @@ func _handle_left_mouse_down(pos: Vector2) -> void:
 	is_marquee_dragging = false
 
 func _handle_mouse_motion(pos: Vector2) -> void:
+	if is_demolish_mode:
+		var hit: Dictionary = camera.raycast_objects(pos)
+		var collider: Object = hit.get("collider", null)
+		var target_b: Building = null
+		if collider is Building and collider.faction == "player":
+			target_b = collider
+		elif collider and collider.get_parent() is Building and collider.get_parent().faction == "player":
+			target_b = collider.get_parent()
+		hovered_demolish_building = target_b
+		if hovered_demolish_building:
+			var b_name: String = hovered_demolish_building.config.get("name", "Постройка")
+			var status: String = "Снести готовую: " if hovered_demolish_building.is_constructed else "Отменить стройку: "
+			hud.show_banner("ЛКМ — %s%s" % [status, b_name])
+		return
+
+	if terraforming_system and terraforming_system.is_active:
+		terraforming_system.on_mouse_motion(pos)
+		return
+
 	if construction_system.is_placing():
 		construction_system.on_drag_motion(pos, all_units)
 		return
@@ -514,9 +743,13 @@ func _handle_mouse_motion(pos: Vector2) -> void:
 	lumber_zone_system.on_mouse_motion(pos)
 
 func _handle_left_mouse_up(pos: Vector2) -> void:
+	if terraforming_system and terraforming_system.is_active:
+		terraforming_system.on_mouse_up(all_units)
+		return
+
 	if construction_system.is_placing():
 		if construction_system.is_drag_building:
-			construction_system.finish_drag_placement()
+			construction_system.finish_drag_placement(all_units)
 		return
 	if lumber_zone_system.is_placing_zone:
 		lumber_zone_system.on_mouse_up(all_units)
@@ -593,6 +826,71 @@ func _handle_single_click(pos: Vector2) -> void:
 		hud.floating_badge.hide_badge()
 
 func _handle_right_mouse_down(pos: Vector2) -> void:
+	if is_demolish_mode:
+		set_demolish_mode(false)
+		return
+
+	if terraforming_system and terraforming_system.is_active:
+		terraforming_system.cancel_or_exit()
+		return
+
+	var hit: Dictionary = camera.raycast_objects(pos)
+	var collider: Object = hit.get("collider", null)
+	var ground_p: Vector3 = camera.raycast_ground(pos)
+
+	if network_session and not NetworkManager.applying_command:
+		if construction_system.is_placing():construction_system.cancel_placement();return
+		if lumber_zone_system.is_placing_zone:lumber_zone_system.cancel_zone_placement();return
+		var mode: String="underground" if underground_system.cutaway else hud.skin.command_mode
+		network_session.context(ground_p,collider,mode)
+		hud.skin.command_mode="";interaction_feedback.show_order(ground_p);return
+
+	if hud.skin and hud.skin.command_mode == "patrol":
+		var any_dispatched: bool = false
+		for u in selection_system.selected_units:
+			if is_instance_valid(u) and u.is_alive and u.faction == "player":
+				selection_system.cancel_assignments(u)
+				u.patrol_start = u.global_position
+				u.patrol_end = ground_p
+				u.patrol_to_end = true
+				u.patrol_wait_timer = 0.0
+				u.current_order = UnitConfigs.UnitOrder.PATROL
+				u.target = null
+				var path: Array[Vector3] = grid_manager.find_unit_path(u, ground_p, true)
+				u.set_path(path)
+				u.state = UnitConfigs.UnitState.MOVING
+				any_dispatched = true
+		hud.skin.command_mode = ""
+		if any_dispatched:
+			interaction_feedback.show_order(ground_p)
+			SoundManager.play_click()
+			hud.show_banner("Патрулирование начато")
+		return
+
+	# 1. Right-click on an unbuilt ghost building with workers selected dispatches workers to build it (NEVER delete on RMB!)
+	var unbuilt_b: Building = null
+	if collider is Building and not collider.is_constructed and collider.faction == "player":
+		unbuilt_b = collider
+	elif collider and collider.get_parent() is Building and not collider.get_parent().is_constructed and collider.get_parent().faction == "player":
+		unbuilt_b = collider.get_parent()
+
+	if unbuilt_b:
+		var any_worker_dispatched: bool = false
+		for u in selection_system.selected_units:
+			if is_instance_valid(u) and u.is_alive and u.faction == "player" and UnitConfigs.is_worker(u.unit_type):
+				selection_system.cancel_assignments(u)
+				u.target = unbuilt_b
+				u.current_order = UnitConfigs.UnitOrder.BUILD
+				var path: Array[Vector3] = grid_manager.find_path(u.global_position, unbuilt_b.global_position)
+				u.set_path(path)
+				u.state = UnitConfigs.UnitState.MOVING
+				any_worker_dispatched = true
+		if any_worker_dispatched:
+			interaction_feedback.show_order(unbuilt_b.global_position)
+			SoundManager.play_click()
+			hud.show_banner("Рабочие отправлены строить")
+			return
+
 	if construction_system.is_placing():
 		construction_system.cancel_placement()
 		return
@@ -601,13 +899,14 @@ func _handle_right_mouse_down(pos: Vector2) -> void:
 		lumber_zone_system.cancel_zone_placement()
 		return
 
-	var hit: Dictionary = camera.raycast_objects(pos)
-	var ground_p: Vector3 = camera.raycast_ground(pos)
+	# 2. Right-click on ground with a production building selected sets rally point
 	if selection_system.selected_units.is_empty() and is_instance_valid(selection_system.selected_building) and not underground_system.cutaway:
-		if production_system.set_rally(selection_system.selected_building,ground_p):interaction_feedback.show_order(ground_p)
-		return
+		var sb: Building = selection_system.selected_building
+		if sb.faction == "player" and sb.is_constructed:
+			if production_system.set_rally(sb, ground_p):
+				interaction_feedback.show_order(ground_p)
+				return
 	if underground_system.cutaway:
-		var collider: Node = hit.get("collider")
 		if collider and collider.has_meta("poi_type") and collider.get_meta("poi_type") == "cave_exit":
 			for unit in selection_system.selected_units:
 				if is_instance_valid(unit) and unit.is_alive and unit.underground_unit:
@@ -639,14 +938,20 @@ func _handle_right_mouse_down(pos: Vector2) -> void:
 	interaction_feedback.show_order(ground_p)
 
 func _process(delta: float) -> void:
+
 	simulation_accumulator+=delta
 	if simulation_accumulator<.05:return
 	delta=simulation_accumulator;simulation_accumulator=0.0
 	# Tick systems
+	if workshop_system:workshop_system.tick(delta)
 	if production_system:production_system.tick(delta)
 	if transport_system:transport_system.tick(delta)
+	all_buildings = all_buildings.filter(func(b): return is_instance_valid(b) and b.is_alive)
 	for b in all_buildings:
-		if is_instance_valid(b) and is_instance_valid(b.rally_marker):b.rally_marker.visible=(b==selection_system.selected_building and not underground_system.cutaway)
+		if is_instance_valid(b.rally_marker):
+			b.rally_marker.visible=(b==selection_system.selected_building and not underground_system.cutaway)
+		if b.is_gate and b.is_constructed:
+			b.tick_gate(delta, all_units, grid_manager)
 	if farming_system:
 		farming_system.tick(delta, all_buildings)
 	var gathering_start: int = Time.get_ticks_usec()
@@ -655,6 +960,8 @@ func _process(delta: float) -> void:
 	var lumber_start: int = Time.get_ticks_usec()
 	lumber_zone_system.process_lumber_zones(delta)
 	last_system_usec["lumber"] = Time.get_ticks_usec()-lumber_start
+	if terraforming_system:
+		terraforming_system.tick(delta, all_units)
 	var combat_start: int = Time.get_ticks_usec()
 	combat_system.process_combat(delta, all_units, all_buildings)
 	last_system_usec["combat"] = Time.get_ticks_usec()-combat_start

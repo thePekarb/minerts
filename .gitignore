@@ -22,3 +22,7 @@ yarn-error.log*
 # Blender backups
 *.blend1
 *.blend2
+
+# Scratch & temporary test scripts
+scratch/
+**/scratch/

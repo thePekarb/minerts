@@ -1,0 +1,18 @@
+Godot Engine v4.7.stable.official.5b4e0cb0f - https://godotengine.org
+
+ERROR: Condition "ret != noErr" is true. Returning: ""
+   at: get_system_ca_certificates (platform/macos/os_macos.mm:1035)
+PASS: initial population matches three workers and two defenders
+PASS: legacy combat sound calls remain safe
+PASS: current combat theme recordings contain PCM samples
+PASS: combat death cleans up node
+PASS: loot awarded once
+PASS: repeated damage does not duplicate loot
+PASS: dead selection cleared
+PASS: death releases population
+PASS: unit process preserves fog hiding
+PASS: minimap fog texture exists
+PASS: completed hut adds capacity
+PASS: destroyed hut removes capacity
+PASS: sunset lighting is continuous
+REGRESSION FAILURES: 0

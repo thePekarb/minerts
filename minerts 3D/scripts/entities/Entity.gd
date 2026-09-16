@@ -20,7 +20,6 @@ func take_damage(amount: float) -> bool:
 		return true
 	if amount <= 0.0:
 		return false
-	SoundManager.play_hit()
 	health = maxf(0.0, health - maxf(1.0, amount - armor))
 	health_changed.emit(health, max_health)
 	if health <= 0.0:

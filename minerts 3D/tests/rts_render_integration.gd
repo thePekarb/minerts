@@ -23,6 +23,24 @@ func _ready() -> void:
 	unit.set_selected(true);game.unit_visuals.update_visuals()
 	check(unit.model_root.visible and unit.anim_player.active,"selection restores the live model in the main scene")
 	check(game.all_units.filter(func(u):return u.faction!="player" and not u.visible).all(func(u):return u.visual_suspended),"unseen hostiles remain excluded from crowd presentation")
+	var prop: Node3D
+	for object in game.resource_spawner.resources.values():
+		if is_instance_valid(object) and object.is_visible_in_tree() and object.position.distance_to(game.camera.current_focus)<24:
+			prop=object;break
+	check(is_instance_valid(prop) and game.prop_batches.instance_count>0,"real resources use spatial mesh batches")
+	if is_instance_valid(prop):
+		var meshes: Array[Node] = prop.find_children("*","MeshInstance3D",true,false)
+		prop.set_meta("visual_focus",true);game.prop_batches.update_batches()
+		check(meshes.all(func(m):return m.visible),"hover restores original resource meshes for highlighting")
+		prop.set_meta("visual_focus",false);game.prop_batches.update_batches()
+		check(meshes.all(func(m):return not m.visible),"ending hover returns resource rendering to its batch")
+		prop.hide();game.prop_batches.update_batches()
+		var count_hidden: int = 0
+		for group in game.prop_batches.groups.values():count_hidden+=group.node.multimesh.instance_count
+		prop.show();game.prop_batches.update_batches()
+		var count_shown: int = 0
+		for group in game.prop_batches.groups.values():count_shown+=group.node.multimesh.instance_count
+		check(count_shown==count_hidden+meshes.size(),"visibility removes hidden resource instances and restores them without duplicates")
 	await RenderingServer.frame_post_draw
 	get_viewport().get_texture().get_image().save_png("res://art/rts-overview.png")
 	print("RTS RENDER INTEGRATION CHECKS: %d | FAILURES: %d" % [checks,failures]);get_tree().quit(failures)

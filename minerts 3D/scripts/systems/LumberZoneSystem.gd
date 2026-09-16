@@ -2,6 +2,7 @@ class_name LumberZoneSystem
 extends Node
 
 class LumberZone:
+	var faction: String="player"
 	var id: String
 	var center: Vector3
 	var radius: float
@@ -91,9 +92,12 @@ func on_mouse_up(all_player_units: Array[Unit]) -> void:
 	is_dragging = false
 	preview_ring.visible = false
 
-func create_zone(center: Vector3, radius: float, all_player_units: Array[Unit]) -> LumberZone:
+func create_zone(center: Vector3, radius: float, all_player_units: Array[Unit], faction: String="player") -> LumberZone:
+	if NetworkManager.in_match and not NetworkManager.applying_command:
+		NetworkManager.session.send("zone_create",{"point":center,"radius":radius});return null
 	var zone: LumberZone = LumberZone.new()
-	zone.id = "lz_" + str(Time.get_ticks_msec())
+	zone.id = "lz_" + str(Time.get_ticks_usec())
+	zone.faction=faction
 	zone.center = center
 	zone.radius = radius
 
@@ -126,7 +130,8 @@ func create_zone(center: Vector3, radius: float, all_player_units: Array[Unit]) 
 	SoundManager.play_click()
 
 	# Auto-select the newly placed zone
-	select_zone(zone)
+	if faction=="player":select_zone(zone)
+	else:badge.hide()
 	return zone
 
 func _update_ring_mesh(ring_inst: MeshInstance3D, rad: float) -> void:
@@ -172,6 +177,8 @@ func deselect_zone() -> void:
 	EventBus.lumber_zone_selected.emit(null)
 
 func add_worker(zone: LumberZone, all_player_units: Array[Unit]) -> bool:
+	if zone and NetworkManager.in_match and not NetworkManager.applying_command:
+		return NetworkManager.session.send("zone_plus",{"zone":zone.id})
 	if not zone or zone.assigned_workers.size() >= zone.max_workers:
 		return false
 
@@ -179,7 +186,7 @@ func add_worker(zone: LumberZone, all_player_units: Array[Unit]) -> bool:
 	var min_dist: float = 9999.0
 
 	for u in all_player_units:
-		if is_instance_valid(u) and u.is_alive and u.faction == "player" and u.unit_type == UnitConfigs.UnitType.WORKER:
+		if is_instance_valid(u) and u.is_alive and u.faction == zone.faction and UnitConfigs.is_worker(u.unit_type):
 			if u.assigned_lumber_zone_id == "" and u.mining_building_id == "" and u.state != UnitConfigs.UnitState.MINING_INSIDE:
 				var d: float = u.global_position.distance_to(zone.center)
 				if d < min_dist:
@@ -197,6 +204,8 @@ func add_worker(zone: LumberZone, all_player_units: Array[Unit]) -> bool:
 	return false
 
 func remove_worker(zone: LumberZone) -> bool:
+	if zone and NetworkManager.in_match and not NetworkManager.applying_command:
+		return NetworkManager.session.send("zone_minus",{"zone":zone.id})
 	if not zone or zone.assigned_workers.is_empty():
 		return false
 
@@ -207,6 +216,28 @@ func remove_worker(zone: LumberZone) -> bool:
 	SoundManager.play_click()
 	EventBus.lumber_zone_workers_changed.emit(zone, zone.assigned_workers.size())
 	return true
+
+func delete_zone(zone: LumberZone = null) -> void:
+	var target_zone: LumberZone = zone if zone else selected_zone
+	if not target_zone:
+		return
+	if NetworkManager.in_match and not NetworkManager.applying_command:
+		NetworkManager.session.send("zone_delete",{"zone":target_zone.id});return
+	for u in target_zone.assigned_workers.duplicate():
+		if is_instance_valid(u):
+			u.assigned_lumber_zone_id = ""
+			u.target = null
+			u.current_order = UnitConfigs.UnitOrder.MOVE
+			u.state = UnitConfigs.UnitState.IDLE
+	target_zone.assigned_workers.clear()
+	if is_instance_valid(target_zone.visual_ring):
+		target_zone.visual_ring.queue_free()
+	if is_instance_valid(target_zone.icon_badge):
+		target_zone.icon_badge.queue_free()
+	zones.erase(target_zone)
+	if selected_zone == target_zone:
+		deselect_zone()
+	SoundManager.play_pop()
 
 func process_lumber_zones(delta: float) -> void:
 	# Subtle floating animation for zone badges

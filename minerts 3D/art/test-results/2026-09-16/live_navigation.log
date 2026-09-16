@@ -1,0 +1,18 @@
+Godot Engine v4.7.stable.official.5b4e0cb0f - https://godotengine.org
+
+ERROR: Condition "ret != noErr" is true. Returning: ""
+   at: get_system_ca_certificates (platform/macos/os_macos.mm:1035)
+PASS: campfire collider and occupied grid share the same centre
+PASS: worker physically passes the formerly blocked west edge of the campfire
+PASS: simultaneous spawns occupy separate free positions
+LIVE GATHER 0s delivered 0
+LIVE GATHER 10s delivered 0
+LIVE GATHER 20s delivered 140
+LIVE GATHER 30s delivered 200
+LIVE GATHER 40s delivered 312
+LIVE GATHER 50s delivered 406
+LIVE GATHER 60s delivered 512
+LIVE GATHER 70s delivered 598
+PASS: twelve workers harvest the real forest and carry wood around the actual campfire
+PASS: crowded melee attackers reach a real enemy instead of pursuing its occupied centre
+LIVE NAVIGATION CHECKS: 5 | FAILURES: 0

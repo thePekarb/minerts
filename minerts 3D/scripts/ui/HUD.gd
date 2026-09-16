@@ -68,6 +68,7 @@ var galley_btn: Button
 var cancel_queue_btn: Button
 var unload_btn: Button
 var queue_label: Label
+var fps_label: Label
 var inspected_building: Building
 var inspector_timer: float = 0.0
 var banner_timer: float = 0.0
@@ -221,26 +222,32 @@ func show_banner(msg: String) -> void:
 		banner_timer = 5.0
 
 func _process(delta: float) -> void:
-	if skin:skin.update_inspector()
-	inspector_timer += delta
-	if inspector_timer >= 0.15 and inspector.visible:
-		inspector_timer = 0.0
-		if is_instance_valid(inspected_unit) and inspected_unit.is_alive:
-			if UnitConfigs.is_vessel(inspected_unit.unit_type):
-				queue_label.text="Пассажиры: %d / %d · ПКМ по берегу: высадка · U: выгрузить" % [inspected_unit.passengers.size(),inspected_unit.config.capacity]
-			inspector_health_bar.value = inspected_unit.health
-			inspector_subtitle.text = "HP: %d / %d | Speed: %.1f | Dmg: %d | Armor: %d" % [inspected_unit.health, inspected_unit.max_health, inspected_unit.speed, inspected_unit.attack_damage, inspected_unit.armor]
-		elif is_instance_valid(inspected_building) and inspected_building.is_alive:
-			if inspected_building.faction=="player" and queue_label.visible:
-				queue_label.text=get_parent().production_system.queue_text(inspected_building)
-			inspector_health_bar.value = inspected_building.health
-			inspector_subtitle.text = "HP: %d / %d | %s" % [inspected_building.health, inspected_building.max_health, "Constructed" if inspected_building.is_constructed else "Building %.0f%%" % inspected_building.construction_progress]
+	if fps_label:
+		fps_label.text = "%d FPS" % Engine.get_frames_per_second()
+	if skin:
+		skin.update_inspector()
+	else:
+		inspector_timer += delta
+		if inspector_timer >= 0.15 and inspector.visible:
+			inspector_timer = 0.0
+			if is_instance_valid(inspected_unit) and inspected_unit.is_alive:
+				if UnitConfigs.is_vessel(inspected_unit.unit_type):
+					queue_label.text="Пассажиры: %d / %d · ПКМ по берегу: высадка · U: выгрузить" % [inspected_unit.passengers.size(),inspected_unit.config.capacity]
+				inspector_health_bar.value = inspected_unit.health
+				inspector_subtitle.text = "HP: %d / %d | Speed: %.1f | Dmg: %d | Armor: %d" % [inspected_unit.health, inspected_unit.max_health, inspected_unit.speed, inspected_unit.attack_damage, inspected_unit.armor]
+			elif is_instance_valid(inspected_building) and inspected_building.is_alive:
+				if inspected_building.faction=="player" and queue_label.visible:
+					queue_label.text=get_parent().production_system.queue_text(inspected_building)
+				inspector_health_bar.value = inspected_building.health
+				inspector_subtitle.text = "HP: %d / %d | %s" % [inspected_building.health, inspected_building.max_health, "Constructed" if inspected_building.is_constructed else "Building %.0f%%" % inspected_building.construction_progress]
 	if banner and banner.visible:
 		banner_timer -= delta
 		if banner_timer <= 0.0:
 			banner.visible = false
 
+
 func _on_selection_changed(units: Array[Unit], building: Building) -> void:
+	if skin:skin.command_mode=""
 	inspected_unit = units[0] if units.size() == 1 else null
 	inspected_building = building
 	if not inspector:
@@ -304,11 +311,13 @@ func _on_selection_changed(units: Array[Unit], building: Building) -> void:
 		elif (building.building_type == BuildingConfigs.BuildingType.CAMPFIRE or building.building_type == BuildingConfigs.BuildingType.HUT) and building.is_constructed:
 			train_worker_btn.visible = true
 
-		elif (building.building_type == BuildingConfigs.BuildingType.WORKSHOP or building.building_type == BuildingConfigs.BuildingType.BARRACKS) and building.is_constructed:
+		elif (building.building_type == BuildingConfigs.BuildingType.BARRACKS) and building.is_constructed:
 			train_warrior_btn.visible = true
 			train_archer_btn.visible = true
 	else:
 		inspector.visible = false
+	if skin:
+		skin.update_inspector()
 
 func _hide_all_inspector_actions() -> void:
 	for control in [boat_btn,galley_btn,cancel_queue_btn,unload_btn,queue_label]:

@@ -1,0 +1,50 @@
+Godot Engine v4.7.stable.official.5b4e0cb0f - https://godotengine.org
+
+ERROR: Condition "ret != noErr" is true. Returning: ""
+   at: get_system_ca_certificates (platform/macos/os_macos.mm:1035)
+PASS: six-island archipelago preserves the home island at the map edge
+PASS: central treasure island is larger than the home island
+PASS: central island contains collectable treasure chests
+PASS: independent goblin settlement starts on its own island
+PASS: land units cannot walk between islands
+PASS: animal death leaves harvestable food instead of instant resources
+PASS: worker hunter automatically starts butchering the carcass
+PASS: butchering transfers a finite amount of food into worker inventory
+PASS: harvested meat must be delivered to storage
+PASS: interrupted delivery never treats the storage building as a resource
+PASS: depleted shared resource targets can be safely replaced
+PASS: training queues a unit without spawning it immediately
+PASS: queued recruits reserve population capacity
+PASS: recruit stays in training until its timer completes
+PASS: completed recruit spawns and walks toward the rally point
+PASS: cancelled recruitment refunds cost and frees queue reservation
+PASS: goblin production spends only its own resources
+PASS: ports cannot be placed inland
+PASS: home island has a reachable buildable coast for a port
+PASS: port accepts a timed boat order
+PASS: port launches completed boat into water
+PASS: launched boat is close enough to a safe embarkation shore
+PASS: worker can receive a boarding order at a coast
+PASS: embarked passengers are stored aboard and stop colliding on land
+PASS: passenger disembarks onto a free land cell
+PASS: ship finds an all-water route between home and goblin islands
+PASS: night creates roaming wolf packs in the forests
+PASS: bears inhabit the forest
+PASS: goblin AI spends resources and places a real construction site
+PASS: bot dispatches its worker without touching the player economy
+PASS: goblin colony receives its own nightly monster attack
+PASS: bot vision does not reveal its island to the player
+PASS: foreign buildings cannot occlude their own visible footprint
+PASS: Blender MCP asset loads: wolf
+PASS: Blender MCP asset loads: bear
+PASS: Blender MCP asset loads: goblin_worker
+PASS: Blender MCP asset loads: goblin_warrior
+PASS: Blender MCP asset loads: goblin_archer
+PASS: Blender MCP asset loads: goblin_spearman
+PASS: Blender MCP asset loads: spider_rider
+PASS: Blender MCP asset loads: troll
+PASS: Blender MCP asset loads: boat
+PASS: Blender MCP asset loads: galley
+PASS: Blender MCP asset loads: port
+PASS: Blender MCP asset loads: goblin_port
+ARCHIPELAGO CHECKS: 45 | FAILURES: 0

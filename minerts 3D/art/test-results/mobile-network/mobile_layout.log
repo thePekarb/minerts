@@ -1,0 +1,15 @@
+Godot Engine v4.7.stable.official.5b4e0cb0f - https://godotengine.org
+
+ERROR: Condition "ret != noErr" is true. Returning: ""
+   at: get_system_ca_certificates (platform/macos/os_macos.mm:1035)
+PASS: inspector fits (896, 414)
+PASS: production panel fits (896, 414)
+PASS: inspector fits (414, 896)
+PASS: production panel fits (414, 896)
+PASS: inspector fits (1194, 834)
+PASS: production panel fits (1194, 834)
+PASS: inspector fits (1280, 800)
+PASS: production panel fits (1280, 800)
+PASS: inspector fits (1672, 941)
+PASS: production panel fits (1672, 941)
+MOBILE LAYOUT FAILURES: 0

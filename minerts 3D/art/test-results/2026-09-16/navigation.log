@@ -1,0 +1,13 @@
+Godot Engine v4.7.stable.official.5b4e0cb0f - https://godotengine.org
+
+ERROR: Condition "ret != noErr" is true. Returning: ""
+   at: get_system_ca_certificates (platform/macos/os_macos.mm:1035)
+PASS: tall plateau route uses the low ramp around the cliff
+PASS: worker actually jumps a waist-high block and reaches its destination
+PASS: worker follows the detour and climbs two separate low steps
+PASS: mixed unit types pass each other without permanent deadlock
+PASS: six workers queue through a one-cell gate and reach separate positions
+PASS: opposing groups share a narrow gate without circular reservations
+PASS: idle ally clears a gate for a unit carrying out a move order
+PASS: builder navigates the gate and finishes a barracks at its perimeter
+NAVIGATION CHECKS: 8 | FAILURES: 0

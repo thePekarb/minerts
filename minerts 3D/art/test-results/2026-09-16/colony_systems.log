@@ -1,0 +1,31 @@
+Godot Engine v4.7.stable.official.5b4e0cb0f - https://godotengine.org
+
+ERROR: Condition "ret != noErr" is true. Returning: ""
+   at: get_system_ca_certificates (platform/macos/os_macos.mm:1035)
+PASS: world meshes use fog visibility texture
+PASS: unknown territory and visible base are distinct
+PASS: explored ground remains remembered after leaving
+PASS: enemy switches from building to nearby player unit
+PASS: enemy retargets to a closer unit
+PASS: combat cannot see across surface and underground layers
+PASS: routes contain no climb higher than one block
+PASS: worker completes building from its perimeter and becomes idle
+PASS: farm pauses without a well
+PASS: irrigated farm produces crops
+PASS: harvest resets the separate Blender crop mesh to seedlings
+PASS: crop mesh grows with the actual production progress
+PASS: destroying the well stops crop production
+PASS: huntable wildlife spawns on island
+PASS: hunting leaves species-specific harvestable food
+PASS: cave entry changes navigation and collision layer
+PASS: X mode exposes underground layer
+PASS: worker excavates adjacent tunnel cell and yields stone
+PASS: dug tunnel immediately joins navigation graph
+PASS: random caves host permanent underground monsters
+PASS: cave respawn respects its cooldown
+PASS: cave monsters respawn after being killed
+PASS: unit can leave the cave through its entrance
+PASS: new movement order cancels the previous underground job
+PASS: friendly hover explains selection
+PASS: hostile hover explains attack
+COLONY CHECKS: 26 | FAILURES: 0

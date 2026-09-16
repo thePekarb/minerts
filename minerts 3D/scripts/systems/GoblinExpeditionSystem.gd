@@ -86,6 +86,7 @@ func _process(delta: float) -> void:
 				if _establish_outpost(u):continue
 			var hostile_building: Building
 			for b in game.all_buildings:
+				if not is_instance_valid(b) or not b.is_alive: continue
 				if b.faction=="player" and u.position.distance_to(b.position)<11:hostile_building=b;break
 			if hostile_building:
 				player_sighted=true;u.target=hostile_building;u.current_order=UnitConfigs.UnitOrder.ATTACK;continue
@@ -180,6 +181,7 @@ func _tick_garrisons(units: Array[Unit]) -> void:
 			if hostile.faction=="player":player_sighted=true
 			continue
 		for b in game.all_buildings:
+			if not is_instance_valid(b) or not b.is_alive: continue
 			if b.faction=="player" and u.position.distance_to(b.position)<12:
 				u.target=b;u.current_order=UnitConfigs.UnitOrder.ATTACK;player_sighted=true;break
 		if u.current_order==UnitConfigs.UnitOrder.ATTACK and is_instance_valid(u.target):continue

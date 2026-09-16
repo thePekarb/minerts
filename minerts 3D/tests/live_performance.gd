@@ -40,6 +40,17 @@ func _ready() -> void:
 	await measure("same_battle_native_resolution_skeletons")
 	game.hud.skin.set_quality(0);game.unit_visuals.mode=0
 	await measure("same_battle_balanced_again")
+	# Populate only genuinely free level sites, without placing colliders on actors.
+	for x in range(60,133,3):
+		for z in range(60,133,3):
+			if game.all_buildings.size()>=40:break
+			if not game.grid_manager.is_area_buildable(x,z,2,2,false):continue
+			var area := Rect2(x-.6,z-.6,3.2,3.2)
+			if game.all_units.any(func(u):return is_instance_valid(u) and not u.underground_unit and area.has_point(Vector2(u.position.x,u.position.z))):continue
+			var b:=Building.new();game.buildings_container.add_child(b);b.init_building(BuildingConfigs.BuildingType.HUT,x,z,true)
+			b.position=Vector3(x+1,game.grid_manager.get_height(x,z),z+1);game.all_buildings.append(b);game.grid_manager.occupy_area(x,z,2,2,b)
+	game.camera.target_zoom=55
+	await measure("city_40_buildings_battle_fog_balanced")
 	await RenderingServer.frame_post_draw;RenderingServer.force_draw()
 	game.get_viewport().get_texture().get_image().save_png("res://art/live-battle.png")
 	var file:=FileAccess.open("res://art/test-results/live_performance.json",FileAccess.WRITE);file.store_string(JSON.stringify(results,"\t"));file.close()

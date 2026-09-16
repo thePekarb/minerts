@@ -53,7 +53,8 @@ enum UnitOrder {
 	PATROL,
 	DEFEND,
 	INTERACT,
-	RETREAT
+	RETREAT,
+	HOLD_POSITION
 }
 
 const CONFIGS: Dictionary = {

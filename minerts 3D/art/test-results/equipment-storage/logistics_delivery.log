@@ -1,0 +1,17 @@
+Godot Engine v4.7.stable.official.5b4e0cb0f - https://godotengine.org
+
+ERROR: Condition "ret != noErr" is true. Returning: ""
+   at: get_system_ca_certificates (platform/macos/os_macos.mm:1035)
+PASS: generated starting clearing provides valid logistics test sites
+PASS: combat never attacks a worker construction target
+PASS: combat preserves resource delivery orders
+PASS: un-equipped miners cannot produce stone
+PASS: miner consumes one pickaxe and retains its equipment
+PASS: mined stone waits at the mine instead of entering the wallet
+PASS: farm waits for its pitchfork
+PASS: equipped irrigated farm places its harvest in the pickup buffer
+PASS: courier physically collects the harvest and delivers it
+PASS: courier physically delivers mined stone
+PASS: couriers prefer the warehouse over the starter camp
+PASS: destroying a warehouse removes its stock from the wallet
+LOGISTICS DELIVERY CHECKS: 12 | FAILURES: 0

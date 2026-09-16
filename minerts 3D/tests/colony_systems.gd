@@ -44,7 +44,12 @@ func _ready() -> void:
 	game.combat_system._process_enemy_unit(enemy, 0.5, game.all_units, game.all_buildings)
 	check(enemy.target == nearest, "enemy retargets to a closer unit")
 	check(not game.grid_manager.has_line_of_sight(Vector3(95,-4,95), Vector3(95,2,95)), "combat cannot see across surface and underground layers")
-	var path: Array[Vector3] = game.grid_manager.find_path(Vector3(96.5,5,38.5), Vector3(94.5,2,95.5), "enemy")
+	var path: Array[Vector3]=[]
+	for x in range(76,117):
+		var point:=Vector3(x+.5,game.grid_manager.get_height(x,76),76.5)
+		if point.y>2 and game.grid_manager.is_walkable(x,76,"enemy"):
+			path=game.grid_manager.find_path(point,old,"enemy")
+			if not path.is_empty():break
 	var safe: bool = not path.is_empty()
 	for i in range(1,path.size()):
 		if absf(path[i].y-path[i-1].y)>1.01: safe = false
@@ -56,13 +61,14 @@ func _ready() -> void:
 	for i in range(121): game.gathering_system._update_unit_build(scout,0.1)
 	check(building.is_constructed and scout.current_order == UnitConfigs.UnitOrder.MOVE, "worker completes building from its perimeter and becomes idle")
 	var farm: Building = make_building(BuildingConfigs.BuildingType.FARM,Vector3(100,2,90))
+	FactionEconomy.add("player","pitchfork",1)
 	var food: int = EconomyManager.resources.food
 	game.farming_system.tick(25,game.all_buildings)
 	check(EconomyManager.resources.food == food and farm.production_timer == 0, "farm pauses without a well")
 	var well: Building = make_building(BuildingConfigs.BuildingType.WELL,Vector3(106,2,90))
 	EconomyManager.resources.water = 4
 	game.farming_system.tick(20,game.all_buildings)
-	check(EconomyManager.resources.food == food+12, "irrigated farm produces crops")
+	check(EconomyManager.resources.food == food and farm.output_buffer.get("food",0)==12, "irrigated equipped farm buffers crops until a worker delivers them")
 	check(farm.crop_plants != null and farm.crop_plants.scale.y < 0.2, "harvest resets the separate Blender crop mesh to seedlings")
 	game.farming_system.tick(10,game.all_buildings)
 	check(farm.crop_plants.scale.y > 0.5 and farm.crop_plants.scale.y < 0.7, "crop mesh grows with the actual production progress")

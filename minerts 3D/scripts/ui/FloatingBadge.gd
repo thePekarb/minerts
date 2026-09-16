@@ -5,6 +5,7 @@ signal minus_clicked()
 signal plus_clicked()
 signal upgrade_clicked()
 signal eject_clicked()
+signal delete_clicked()
 
 @onready var panel: PanelContainer = $Panel
 @onready var title_label: Label = $Panel/VBox/Header/TitleLabel
@@ -13,6 +14,7 @@ signal eject_clicked()
 @onready var plus_btn: Button = $Panel/VBox/HBox/PlusBtn
 @onready var upgrade_btn: Button = $Panel/VBox/UpgradeBtn
 @onready var eject_btn: Button = $Panel/VBox/EjectBtn
+var delete_btn: Button = null
 
 var target_node: Node3D = null
 var target_pos: Vector3 = Vector3.ZERO
@@ -28,6 +30,15 @@ func _ready() -> void:
 		upgrade_btn.pressed.connect(func(): upgrade_clicked.emit())
 	if eject_btn:
 		eject_btn.pressed.connect(func(): eject_clicked.emit())
+	
+	delete_btn = Button.new()
+	delete_btn.text = "🗑 Удалить зону"
+	delete_btn.custom_minimum_size = Vector2(0, 24)
+	delete_btn.pressed.connect(func(): delete_clicked.emit())
+	var vbox: VBoxContainer = panel.get_node_or_null("VBox") as VBoxContainer
+	if vbox:
+		vbox.add_child(delete_btn)
+	delete_btn.visible = false
 
 func show_for_lumber_zone(zone_badge: Node3D, current_workers: int, max_w: int, cam: Camera3D) -> void:
 	camera = cam
@@ -41,6 +52,8 @@ func show_for_lumber_zone(zone_badge: Node3D, current_workers: int, max_w: int, 
 		upgrade_btn.visible = false
 	if eject_btn:
 		eject_btn.visible = false
+	if delete_btn:
+		delete_btn.visible = true
 
 	update_count(current_workers, max_w)
 	_update_screen_position()
@@ -64,6 +77,8 @@ func show_for_mine(mine: Building, current_miners: int, max_m: int, cam: Camera3
 	if eject_btn:
 		eject_btn.visible = true
 		eject_btn.text = "Eject All"
+	if delete_btn:
+		delete_btn.visible = false
 
 	update_count(current_miners, max_m)
 	_update_screen_position()
@@ -79,6 +94,8 @@ func update_count(current: int, maximum: int) -> void:
 func hide_badge() -> void:
 	visible = false
 	target_node = null
+	if delete_btn:
+		delete_btn.visible = false
 
 func _process(_delta: float) -> void:
 	if visible and is_instance_valid(target_node) and is_instance_valid(camera):

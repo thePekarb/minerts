@@ -37,6 +37,7 @@ func _landing_cell(pos: Vector3, passenger: Unit = null) -> Vector3:
 			if free and p.distance_squared_to(pos)<distance:best=p;distance=p.distance_squared_to(pos)
 	return best
 func unload(ship: Unit) -> int:
+	if NetworkManager.route_units("unload",[ship]):return 0
 	var count: int = 0
 	for unit in ship.passengers.duplicate():
 		if not is_instance_valid(unit):ship.passengers.erase(unit);continue

@@ -48,7 +48,7 @@ static func create_building(type: BuildingConfigs.BuildingType) -> Node3D:
 
 static func create_faction_building(type: BuildingConfigs.BuildingType, faction: String) -> Node3D:
 	var names: Array[String] = ["campfire","hut","storage","wall","gate","tower","workshop","mine","barracks","farm","well","port"]
-	if faction=="goblin":
+	if FactionRules.race(faction)=="goblin":
 		var variant: Node3D = instantiate_asset("goblin_"+names[int(type)])
 		if variant: return variant
 	return create_building(type)

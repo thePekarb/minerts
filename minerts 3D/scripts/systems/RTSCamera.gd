@@ -38,6 +38,20 @@ func set_terrain(tg: TerrainGenerator) -> void:
 func _unhandled_input(event: InputEvent) -> void:
 	if event is InputEventMouseButton:
 		var mb: InputEventMouseButton = event as InputEventMouseButton
+		# Block camera zoom / orbit if mouse is over any UI control
+		var hovered: Control = get_viewport().gui_get_hovered_control()
+		if is_instance_valid(hovered) and hovered.is_visible_in_tree() and hovered.mouse_filter != Control.MOUSE_FILTER_IGNORE:
+			return
+
+		var tree := get_tree()
+		if tree and tree.current_scene:
+			var hud_node: Node = tree.current_scene.get_node_or_null("HUD")
+			if is_instance_valid(hud_node) and hud_node is Control:
+				for child in hud_node.get_children():
+					if child is Control and (child as Control).visible and (child as Control).mouse_filter != Control.MOUSE_FILTER_IGNORE:
+						if (child as Control).get_global_rect().has_point(mb.position):
+							return
+
 		if mb.button_index == MOUSE_BUTTON_WHEEL_UP:
 			target_zoom = clampf(target_zoom - zoom_speed, min_zoom, max_zoom)
 		elif mb.button_index == MOUSE_BUTTON_WHEEL_DOWN:

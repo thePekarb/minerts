@@ -1,0 +1,16 @@
+Godot Engine v4.7.stable.official.5b4e0cb0f - https://godotengine.org
+
+ERROR: Condition "ret != noErr" is true. Returning: ""
+   at: get_system_ca_certificates (platform/macos/os_macos.mm:1035)
+PASS: clock crossing 19:30 spawns the first wave automatically
+PASS: active wave stays visible in HUD despite fog
+PASS: active altar is marked through fog
+PASS: monsters move while hidden by fog
+PASS: night monsters enter visibility and reach the settlement
+PASS: night monsters attack nearby defenders before buildings
+PASS: starting defenders repel the first wave
+PASS: HUD reports the completed attack
+PASS: late evening jump still creates the night's wave
+PASS: repeated evening updates never duplicate the wave
+PASS: real physics movement reaches base from all four altars
+NIGHT RAID CHECKS: 11 | FAILURES: 0

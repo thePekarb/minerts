@@ -1,0 +1,39 @@
+Godot Engine v4.7.stable.official.5b4e0cb0f - https://godotengine.org
+
+ERROR: Condition "ret != noErr" is true. Returning: ""
+   at: get_system_ca_certificates (platform/macos/os_macos.mm:1035)
+PASS: archipelago creates land chunks and skips empty sea chunks
+PASS: highlands and all seven biomes present
+PASS: altar (96, 38) has a route to base
+PASS: altar (154, 96) has a route to base
+PASS: altar (96, 154) has a route to base
+PASS: altar (38, 96) has a route to base
+PASS: Blender rig and animations for unit 0
+PASS: worker has independently controlled tools
+PASS: Blender rig and animations for unit 2
+PASS: Blender rig and animations for unit 3
+PASS: Blender rig and animations for unit 1
+PASS: Blender rig and animations for unit 6
+PASS: Blender rig and animations for unit 7
+PASS: Blender rig and animations for unit 8
+PASS: Blender rig and animations for unit 9
+PASS: gathering shows axe only
+PASS: construction shows hammer only
+PASS: worker capacity and remaining resource stock are respected
+PASS: knight armor reduces incoming damage
+PASS: skeleton fires an actual arrow
+PASS: closed gate blocks navigation
+PASS: open gate releases entire footprint
+PASS: open gate updates AStar
+PASS: closing gate updates AStar
+PASS: mine upgrade does not mutate other mine configs
+PASS: destroyed mine ejects surviving workers
+PASS: creeper starts a visible fuse before damage
+PASS: fuse grants time to retreat or kill creeper
+PASS: creeper explodes and damages nearby units
+PASS: blast excludes targets outside radius
+PASS: self-detonation does not grant kill loot
+PASS: killing creeper during fuse prevents explosion
+PASS: explosion damages fortifications
+PASS: third wave includes all four enemy roles
+FRONTIER CHECKS: 34 | FAILURES: 0

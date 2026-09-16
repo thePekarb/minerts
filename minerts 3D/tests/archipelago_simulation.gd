@@ -32,6 +32,9 @@ func _physics_process(_delta: float) -> void:
 		if u.faction=="goblin" and u.health<u.max_health:bot_hurt=true
 	if frames%1800==0:
 		print("BOT STATE @ ",frames/60," s: buildings ",built.keys()," units ",produced.keys()," wallet ",FactionEconomy.resources("goblin")," population ",game.goblin_ai.own_units().size())
+		for b in game.goblin_ai.own_buildings():
+			if not b.is_constructed:print("UNFINISHED: ",b.building_type," at ",b.position," progress ",b.construction_progress)
+		print("NEEDED: ",game.goblin_ai._next_building(game.goblin_ai.own_buildings(),game.goblin_ai.own_units().size())," center ",game.goblin_ai.center)
 	if frames>=25200:
 		check(built.has(BuildingConfigs.BuildingType.BARRACKS),"AI worker physically completes the barracks")
 		check(built.has(BuildingConfigs.BuildingType.FARM) and built.has(BuildingConfigs.BuildingType.WELL),"AI establishes its irrigated food economy")

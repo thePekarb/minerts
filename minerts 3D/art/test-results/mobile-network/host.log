@@ -1,0 +1,52 @@
+Godot Engine v4.7.stable.official.5b4e0cb0f - https://godotengine.org
+
+ERROR: Condition "ret != noErr" is true. Returning: ""
+   at: get_system_ca_certificates (platform/macos/os_macos.mm:1035)
+ERROR: Couldn't create an ENet host.
+   at: _create (modules/enet/enet_connection.cpp:319)
+   GDScript backtrace (most recent call first):
+       [0] host_game (res://scripts/autoload/NetworkManager.gd:60)
+       [1] _ready (res://tests/network_match.gd:15)
+ERROR: Не удалось открыть UDP-порт 17897: Can't create
+   at: push_error (core/variant/variant_utility.cpp:1023)
+   GDScript backtrace (most recent call first):
+       [0] <anonymous lambda> (res://tests/network_match.gd:13)
+       [1] _error (res://scripts/autoload/NetworkManager.gd:54)
+       [2] host_game (res://scripts/autoload/NetworkManager.gd:61)
+       [3] _ready (res://tests/network_match.gd:15)
+ERROR: host opens UDP
+   at: push_error (core/variant/variant_utility.cpp:1023)
+   GDScript backtrace (most recent call first):
+       [0] check (res://tests/network_match.gd:7)
+       [1] _ready (res://tests/network_match.gd:15)
+ERROR: client registered in separate seat
+   at: push_error (core/variant/variant_utility.cpp:1023)
+   GDScript backtrace (most recent call first):
+       [0] check (res://tests/network_match.gd:7)
+       [1] _ready (res://tests/network_match.gd:19)
+ERROR: RPC 'client_loaded' on yourself is not allowed by selected mode.
+   at: rpcp (modules/multiplayer/scene_rpc_interface.cpp:489)
+   GDScript backtrace (most recent call first):
+       [0] mark_loaded (res://scripts/autoload/NetworkManager.gd:151)
+       [1] setup (res://scripts/network/NetworkGameSession.gd:35)
+       [2] _ready (res://scripts/Main.gd:92)
+       [3] _ready (res://tests/network_match.gd:28)
+ERROR: both worlds ready before simulation
+   at: push_error (core/variant/variant_utility.cpp:1023)
+   GDScript backtrace (most recent call first):
+       [0] check (res://tests/network_match.gd:7)
+       [1] _ready (res://tests/network_match.gd:33)
+ERROR: host processes client commands
+   at: push_error (core/variant/variant_utility.cpp:1023)
+   GDScript backtrace (most recent call first):
+       [0] check (res://tests/network_match.gd:7)
+       [1] _ready (res://tests/network_match.gd:35)
+ERROR: foreign ownership is rejected
+   at: push_error (core/variant/variant_utility.cpp:1023)
+   GDScript backtrace (most recent call first):
+       [0] check (res://tests/network_match.gd:7)
+       [1] _ready (res://tests/network_match.gd:36)
+SCRIPT ERROR: Out of bounds get index '0' (on base: 'PackedInt32Array')
+          at: _ready (res://tests/network_match.gd:37)
+          GDScript backtrace (most recent call first):
+              [0] _ready (res://tests/network_match.gd:37)

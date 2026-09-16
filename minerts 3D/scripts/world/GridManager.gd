@@ -18,6 +18,7 @@ var surface_astar_searches: int = 0
 var hierarchy: HierarchicalNavigation
 var group_navigation: GroupNavigation
 var hierarchy_enabled: bool = true
+var closed_player_gates: Dictionary = {}
 
 func invalidate_terrain(cell: Vector2i = Vector2i(-1,-1)) -> void:
 	# Includes occluder changes (construction, destruction and opening gates).
@@ -80,6 +81,20 @@ func get_tile(x: int, z: int) -> Tile:
 		return null
 	return tiles[x][z]
 
+func is_valid_coord(x: int, z: int) -> bool:
+	return x >= 0 and x < GRID_SIZE and z >= 0 and z < GRID_SIZE
+
+func find_nearest_walkable(cell: Vector2i, max_radius: int = 8, faction: String = "player") -> Vector2i:
+	for radius in range(0, max_radius + 1):
+		for dx in range(-radius, radius + 1):
+			for dz in range(-radius, radius + 1):
+				if maxi(absi(dx), absi(dz)) != radius: continue
+				var cx: int = cell.x + dx
+				var cz: int = cell.y + dz
+				if is_walkable(cx, cz, faction):
+					return Vector2i(cx, cz)
+	return Vector2i(-1, -1)
+
 func get_height(x: float, z: float) -> float:
 	var ix: int = int(floor(x))
 	var iz: int = int(floor(z))
@@ -108,6 +123,8 @@ func rebuild_astar() -> void:
 			astar.add_point(id, pos)
 			if not tile.is_walkable_for():
 				astar.set_point_disabled(id, true)
+			if tile.is_gate and not tile.is_gate_open:
+				closed_player_gates[id] = true
 
 	# Connect forward neighbors (bidirectional connects both ways)
 	var forward_dirs: Array[Vector2i] = [
@@ -128,6 +145,37 @@ func rebuild_astar() -> void:
 						var id2: int = get_point_id(nx, nz)
 						astar.connect_points(id1, id2, true)
 
+func update_tile_height(x: int, z: int, new_height: int) -> void:
+	var tile: Tile = get_tile(x, z)
+	if not tile:
+		return
+	tile.height = new_height
+	if tile.biome == Tile.Biome.ROCK and new_height <= 2:
+		tile.biome = Tile.Biome.PLAINS
+
+	var id1: int = get_point_id(x, z)
+	if astar.has_point(id1):
+		var pos: Vector3 = Vector3(float(x) + 0.5, float(tile.height), float(z) + 0.5)
+		astar.set_point_position(id1, pos)
+
+		var dirs: Array[Vector2i] = [
+			Vector2i(1, 0), Vector2i(-1, 0), Vector2i(0, 1), Vector2i(0, -1)
+		]
+		for d in dirs:
+			var nx: int = x + d.x
+			var nz: int = z + d.y
+			if nx >= 0 and nx < GRID_SIZE and nz >= 0 and nz < GRID_SIZE:
+				var n_tile: Tile = tiles[nx][nz]
+				var id2: int = get_point_id(nx, nz)
+				if astar.has_point(id2):
+					if abs(n_tile.height - tile.height) <= 1:
+						astar.connect_points(id1, id2, true)
+					else:
+						astar.disconnect_points(id1, id2, true)
+
+	invalidate_terrain(Vector2i(x, z))
+
+
 func set_tile_occupied(x: int, z: int, building_id: String, is_gate: bool = false) -> void:
 	var tile: Tile = get_tile(x, z)
 	if not tile:
@@ -142,6 +190,8 @@ func set_tile_occupied(x: int, z: int, building_id: String, is_gate: bool = fals
 	var id: int = get_point_id(x, z)
 	if astar.has_point(id):
 		astar.set_point_disabled(id, not tile.is_walkable_for())
+	if is_gate:
+		closed_player_gates[id] = true
 
 func is_area_buildable(gx: int, gz: int, width: int, depth: int, require_visible: bool = true) -> bool:
 	var base_tile: Tile = get_tile(gx, gz)
@@ -177,6 +227,7 @@ func free_tile(x: int, z: int) -> void:
 	tile.walkable = (tile.biome != Tile.Biome.WATER)
 
 	var id: int = get_point_id(x, z)
+	closed_player_gates.erase(id)
 	if astar.has_point(id):
 		astar.set_point_disabled(id, not tile.is_walkable_for())
 
@@ -226,7 +277,8 @@ func find_path(start_pos: Vector3, target_pos: Vector3, faction: String = "playe
 
 	# Target might be an obstacle (e.g. tree, building, wall)
 	var target_tile: Tile = get_tile(tx, tz)
-	var is_target_obstacle: bool = target_tile != null and (not target_tile.is_walkable_for(faction) or astar.is_point_disabled(get_point_id(tx,tz)))
+	var is_gate_target: bool = (target_tile != null and target_tile.is_gate and faction == "player")
+	var is_target_obstacle: bool = target_tile != null and not is_gate_target and (not target_tile.is_walkable_for(faction) or astar.is_point_disabled(get_point_id(tx,tz)))
 
 	var start_id: int = get_point_id(sx, sz)
 	var end_id: int = get_point_id(tx, tz)
@@ -234,6 +286,17 @@ func find_path(start_pos: Vector3, target_pos: Vector3, faction: String = "playe
 	var was_start_disabled: bool = astar.is_point_disabled(start_id)
 	if was_start_disabled:
 		astar.set_point_disabled(start_id, false)
+
+	# For player pathfinding, temporarily enable closed player gates so paths can be planned through them
+	var temp_opened_gates: Array[int] = []
+	var prev_cache_bypass: bool = path_cache_bypass
+	if faction == "player" and not closed_player_gates.is_empty():
+		for pid in closed_player_gates.keys():
+			if astar.has_point(pid) and astar.is_point_disabled(pid):
+				astar.set_point_disabled(pid, false)
+				temp_opened_gates.append(pid)
+		if not temp_opened_gates.is_empty():
+			path_cache_bypass = true
 
 	# Search the full perimeter, including large buildings, and test reachability.
 	var candidates: Array[int] = []
@@ -256,15 +319,26 @@ func find_path(start_pos: Vector3, target_pos: Vector3, faction: String = "playe
 				break
 
 	if not astar.has_point(start_id) or not astar.has_point(end_id):
+		if was_start_disabled: astar.set_point_disabled(start_id, true)
+		for pid in temp_opened_gates:
+			if astar.has_point(pid): astar.set_point_disabled(pid, true)
+		path_cache_bypass = prev_cache_bypass
 		return []
 
 	if astar.is_point_disabled(end_id):
-		if was_start_disabled:astar.set_point_disabled(start_id,true)
+		if was_start_disabled: astar.set_point_disabled(start_id, true)
+		for pid in temp_opened_gates:
+			if astar.has_point(pid): astar.set_point_disabled(pid, true)
+		path_cache_bypass = prev_cache_bypass
 		return []
-	if path_pts.is_empty():path_pts = surface_path(start_id, end_id)
+	if path_pts.is_empty(): path_pts = surface_path(start_id, end_id)
 
 	if was_start_disabled:
 		astar.set_point_disabled(start_id, true)
+	for pid in temp_opened_gates:
+		if astar.has_point(pid):
+			astar.set_point_disabled(pid, true)
+	path_cache_bypass = prev_cache_bypass
 
 	var result: Array[Vector3] = []
 	for p in path_pts:
@@ -315,7 +389,11 @@ func can_step(from: Vector3, to: Vector3, faction: String = "player") -> bool:
 		return underground.is_open(Vector2i(floori(to.x), floori(to.z)))
 	var a: Tile = get_tile(floori(from.x), floori(from.z))
 	var b: Tile = get_tile(floori(to.x), floori(to.z))
-	return a != null and b != null and b.is_walkable_for(faction) and absi(a.height - b.height) <= 1
+	if a == null or b == null or absi(a.height - b.height) > 1:
+		return false
+	if faction == "player" and b.is_gate:
+		return true
+	return b.is_walkable_for(faction)
 
 func has_line_of_sight(from: Vector3, to: Vector3) -> bool:
 	if (from.y < -1.0) != (to.y < -1.0):
@@ -402,7 +480,11 @@ func motion_clear(unit: Unit, from: Vector3, to: Vector3) -> bool:
 			continue
 		if not can_step(from,point,unit.faction):return false
 		# Check the body's width, not only the tile underneath its centre.
-		for off in [Vector2(radius,0),Vector2(-radius,0),Vector2(0,radius),Vector2(0,-radius),Vector2(radius,radius)*0.707,Vector2(-radius,radius)*0.707,Vector2(radius,-radius)*0.707,Vector2(-radius,-radius)*0.707]:
+		var cur_tile: Tile = get_tile(floori(point.x), floori(point.z))
+		var from_tile: Tile = get_tile(floori(from.x), floori(from.z))
+		var is_doorway: bool = (cur_tile != null and cur_tile.is_gate) or (from_tile != null and from_tile.is_gate)
+		var check_radius: float = 0.10 if is_doorway else radius
+		for off in [Vector2(check_radius,0),Vector2(-check_radius,0),Vector2(0,check_radius),Vector2(0,-check_radius),Vector2(check_radius,check_radius)*0.707,Vector2(-check_radius,check_radius)*0.707,Vector2(check_radius,-check_radius)*0.707,Vector2(-check_radius,-check_radius)*0.707]:
 			var edge: Vector3 = point+Vector3(off.x,0,off.y)
 			if not can_step(from,edge,unit.faction):
 				# Permit an already overlapping spawn to move out, never farther in.
@@ -525,7 +607,8 @@ func find_interaction_path(unit: Unit, target: Node3D, reach: float) -> Array[Ve
 			var point := Vector3(cell.x+.5,-4.0 if unit.underground_unit else get_height(cell.x,cell.y),cell.y+.5)
 			if not _navigation_cell_open(unit,point):continue
 			var distance: float = interaction_distance(point,target)
-			if distance>reach-.12 or absf(point.y-target.position.y)>1.1:continue
+			# Arrival tolerance is 0.16: reserve enough slack to actually enter reach.
+			if distance>reach-.25 or absf(point.y-target.position.y)>1.1:continue
 			if target is Unit and distance<unit.navigation_radius+target.navigation_radius+.12:continue
 			if claims.has(cell) and claims[cell].get_ref()!=unit:continue
 			candidates.append(point)

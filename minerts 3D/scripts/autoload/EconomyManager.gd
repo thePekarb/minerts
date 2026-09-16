@@ -18,6 +18,9 @@ var max_population: int:
 	get: return resources.get("max_pop", 10)
 	set(val): resources["max_pop"] = val
 
+func get_resource(type_name: String) -> int:
+	return resources.get(type_name, 0)
+
 func spend_resources(cost: Dictionary) -> bool:
 	return deduct_cost(cost)
 
@@ -41,6 +44,7 @@ func can_afford(cost: Dictionary) -> bool:
 func deduct_cost(cost: Dictionary) -> bool:
 	if not can_afford(cost):
 		return false
+	if is_instance_valid(FactionEconomy.storage):FactionEconomy.storage.consume("player",cost)
 	for res in cost:
 		var amount: int = cost[res]
 		resources[res] -= amount
@@ -48,6 +52,8 @@ func deduct_cost(cost: Dictionary) -> bool:
 	return true
 
 func add_resource(type_name: String, amount: int) -> void:
+	if is_instance_valid(FactionEconomy.storage) and FactionEconomy.storage.tracks(type_name):
+		FactionEconomy.storage.refund("player",type_name,amount);return
 	resources[type_name] = resources.get(type_name, 0) + amount
 	EventBus.resource_changed.emit(type_name, resources[type_name])
 

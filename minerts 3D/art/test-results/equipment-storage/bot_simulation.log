@@ -1,0 +1,70 @@
+Godot Engine v4.7.stable.official.5b4e0cb0f - https://godotengine.org
+
+ERROR: Condition "ret != noErr" is true. Returning: ""
+   at: get_system_ca_certificates (platform/macos/os_macos.mm:1035)
+BOT STATE @ 30 s: buildings [1, 7, 6, 10] units [] wallet { "wood": 50, "stone": 30, "food": 180, "ore": 17, "water": 0 } population 11
+UNFINISHED: 9 at (407.5, 2.0, 76.5) progress 47.0833333333333
+NEEDED: 9 center (402.5, 2.0, 80.5)
+BOT STATE @ 60 s: buildings [1, 7, 6, 10, 9] units [15] wallet { "wood": 69, "stone": 12, "food": 162, "ore": 17, "water": 12, "axe": 1, "pickaxe": 0, "sword": 1 } population 12
+NEEDED: 2 center (402.5, 2.0, 80.5)
+BOT STATE @ 90 s: buildings [1, 7, 6, 10, 9] units [15] wallet { "wood": 109, "stone": 11, "food": 126, "ore": 17, "water": 24, "axe": 0, "pickaxe": 0, "sword": 1, "pitchfork": 0 } population 14
+NEEDED: 2 center (402.5, 2.0, 80.5)
+BOT STATE @ 120 s: buildings [1, 7, 6, 10, 9] units [15] wallet { "wood": 237, "stone": 27, "food": 162, "ore": 17, "water": 30, "axe": 2, "pickaxe": 0, "sword": 1, "pitchfork": 0 } population 14
+NEEDED: 2 center (402.5, 2.0, 80.5)
+BOT STATE @ 150 s: buildings [1, 7, 6, 10, 9] units [15] wallet { "wood": 305, "stone": 21, "food": 198, "ore": 33, "water": 36, "axe": 2, "pickaxe": 0, "sword": 1, "pitchfork": 0 } population 14
+NEEDED: 2 center (402.5, 2.0, 80.5)
+BOT STATE @ 180 s: buildings [1, 7, 6, 10, 9] units [15] wallet { "wood": 354, "stone": 43, "food": 234, "ore": 59, "water": 42, "axe": 2, "pickaxe": 0, "sword": 1, "pitchfork": 0 } population 14
+NEEDED: 2 center (402.5, 2.0, 80.5)
+BOT STATE @ 210 s: buildings [1, 7, 6, 10, 9] units [15] wallet { "wood": 354, "stone": 65, "food": 270, "ore": 81, "water": 48, "axe": 2, "pickaxe": 0, "sword": 1, "pitchfork": 0 } population 14
+NEEDED: 2 center (402.5, 2.0, 80.5)
+BOT STATE @ 240 s: buildings [1, 7, 6, 10, 9] units [15] wallet { "wood": 354, "stone": 91, "food": 294, "ore": 107, "water": 54, "axe": 2, "pickaxe": 0, "sword": 1, "pitchfork": 0 } population 14
+NEEDED: 2 center (402.5, 2.0, 80.5)
+BOT STATE @ 270 s: buildings [1, 7, 6, 10, 9] units [15] wallet { "wood": 354, "stone": 113, "food": 342, "ore": 129, "water": 60, "axe": 2, "pickaxe": 0, "sword": 1, "pitchfork": 0 } population 14
+NEEDED: 2 center (402.5, 2.0, 80.5)
+BOT STATE @ 300 s: buildings [1, 7, 6, 10, 9] units [15] wallet { "wood": 354, "stone": 131, "food": 366, "ore": 146, "water": 66, "axe": 2, "pickaxe": 0, "sword": 1, "pitchfork": 0 } population 14
+NEEDED: 2 center (402.5, 2.0, 80.5)
+BOT STATE @ 330 s: buildings [1, 7, 6, 10, 9] units [15] wallet { "wood": 354, "stone": 131, "food": 366, "ore": 146, "water": 72, "axe": 2, "pickaxe": 0, "sword": 1, "pitchfork": 0 } population 14
+NEEDED: 2 center (402.5, 2.0, 80.5)
+BOT STATE @ 360 s: buildings [1, 7, 6, 10, 9] units [15] wallet { "wood": 354, "stone": 131, "food": 366, "ore": 146, "water": 78, "axe": 2, "pickaxe": 0, "sword": 1, "pitchfork": 0 } population 14
+NEEDED: 2 center (402.5, 2.0, 80.5)
+BOT STATE @ 390 s: buildings [1, 7, 6, 10, 9] units [15] wallet { "wood": 354, "stone": 131, "food": 366, "ore": 146, "water": 88, "axe": 2, "pickaxe": 0, "sword": 1, "pitchfork": 0 } population 14
+NEEDED: 2 center (402.5, 2.0, 80.5)
+BOT STATE @ 420 s: buildings [1, 7, 6, 10, 9] units [15] wallet { "wood": 354, "stone": 131, "food": 366, "ore": 146, "water": 100, "axe": 2, "pickaxe": 0, "sword": 1, "pitchfork": 0 } population 14
+NEEDED: 2 center (402.5, 2.0, 80.5)
+ERROR: AI worker physically completes the barracks
+   at: push_error (core/variant/variant_utility.cpp:1023)
+   GDScript backtrace (most recent call first):
+       [0] check (res://tests/archipelago_simulation.gd:14)
+       [1] _physics_process (res://tests/archipelago_simulation.gd:39)
+PASS: AI establishes its irrigated food economy
+ERROR: AI develops a coastal port
+   at: push_error (core/variant/variant_utility.cpp:1023)
+   GDScript backtrace (most recent call first):
+       [0] check (res://tests/archipelago_simulation.gd:14)
+       [1] _physics_process (res://tests/archipelago_simulation.gd:41)
+PASS: AI replenishes its workforce through timed recruitment
+ERROR: AI produces all five military roles through the real queue
+   at: push_error (core/variant/variant_utility.cpp:1023)
+   GDScript backtrace (most recent call first):
+       [0] check (res://tests/archipelago_simulation.gd:14)
+       [1] _physics_process (res://tests/archipelago_simulation.gd:43)
+PASS: AI units explore their island
+ERROR: night monsters actually engage the goblin settlement
+   at: push_error (core/variant/variant_utility.cpp:1023)
+   GDScript backtrace (most recent call first):
+       [0] check (res://tests/archipelago_simulation.gd:14)
+       [1] _physics_process (res://tests/archipelago_simulation.gd:45)
+PASS: goblin settlement survives a complete night
+PASS: workers deliver enough resources for sustained development
+WORKER: (51.55066, 2.0, 252.72) state 8 order 2 target <null> inventory { "type": "wood", "amount": 14 }
+WORKER: (50.31638, 2.0, 250.4191) state 8 order 2 target <null> inventory { "type": "wood", "amount": 1 }
+WORKER: (48.69835, 2.0, 255.5664) state 1 order 2 target Tree_241:<StaticBody3D#4548823619518> inventory { "type": "", "amount": 0 }
+WORKER: (401.0, 2.0, 76.0) state 9 order 0 target @StaticBody3D@5208:<StaticBody3D#5178808097192> inventory { "type": "", "amount": 0 }
+WORKER: (401.0, 2.0, 76.0) state 9 order 0 target @StaticBody3D@5208:<StaticBody3D#5178808097192> inventory { "type": "", "amount": 0 }
+WORKER: (396.5003, 2.0, 74.63747) state 1 order 2 target Tree_starter_2451:<StaticBody3D#4734211867368> inventory { "type": "", "amount": 0 }
+WORKER: (408.3629, 2.0, 74.50019) state 1 order 2 target Tree_starter_2453:<StaticBody3D#4734379639538> inventory { "type": "", "amount": 0 }
+WORKER: (54.89374, 3.0, 241.5908) state 8 order 2 target <null> inventory { "type": "wood", "amount": 14 }
+WORKER: (51.47753, 2.0, 251.3161) state 8 order 2 target <null> inventory { "type": "wood", "amount": 14 }
+WORKER: (402.5251, 2.0, 78.44101) state 8 order 2 target <null> inventory { "type": "ore", "amount": 1 }
+DELIVERED WOOD: 499
+SIMULATION CHECKS: 9 | FAILURES: 4

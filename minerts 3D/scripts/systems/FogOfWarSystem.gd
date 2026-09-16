@@ -24,6 +24,7 @@ var last_update_usec: int = 0
 
 # Visibility matrix: 0 = hidden, 1 = explored (shrouded), 2 = currently visible
 var visibility_grid: PackedByteArray = PackedByteArray()
+var fog_enabled: bool = true
 
 func init_fog(grid_mgr: GridManager) -> void:
 	grid_manager = grid_mgr
@@ -37,13 +38,48 @@ func init_fog(grid_mgr: GridManager) -> void:
 	fog_image.fill(Color.BLACK)
 	fog_texture = ImageTexture.create_from_image(fog_image)
 
+func set_fog_enabled(is_enabled: bool) -> void:
+	fog_enabled = is_enabled
+	if not fog_enabled:
+		if visibility_grid.size() == GridManager.GRID_SIZE * GridManager.GRID_SIZE:
+			visibility_grid.fill(2)
+		if fog_image:
+			fog_image.fill(Color(1.0, 0, 0, 1.0))
+			if fog_texture:
+				fog_texture.update(fog_image)
+		if grid_manager and not grid_manager.tiles.is_empty():
+			for x in range(GridManager.GRID_SIZE):
+				for z in range(GridManager.GRID_SIZE):
+					var t: Tile = grid_manager.get_tile(x, z)
+					if t:
+						t.is_explored = true
+						t.is_visible = true
+		for o in static_objects:
+			if is_instance_valid(o):
+				o.visible = true
+		visibility_updated.emit()
+
 func update_fog(all_units: Array[Unit], all_buildings: Array[Building], delta: float) -> void:
+	if not fog_enabled:
+		for u in all_units:
+			if is_instance_valid(u) and u.is_alive and not u.underground_unit:
+				u.visible = true
+		for b in all_buildings:
+			if is_instance_valid(b) and b.is_alive:
+				b.visible = true
+		for o in static_objects:
+			if is_instance_valid(o):
+				o.visible = true
+		visibility_updated.emit()
+		return
+
 	update_timer += delta
 	if update_timer < 0.25: # Run 4 times per second for peak efficiency
 		return
 	update_timer = 0.0
 	var started: int = Time.get_ticks_usec()
 	var previous_visible: Dictionary = visible_cells.duplicate()
+
 
 	# Only visit changed cells, independent of archipelago size.
 	dirty_cells=visible_cells.duplicate()
@@ -146,9 +182,12 @@ func _calculate_sight(cx: int, cz: int, radius: int) -> PackedInt32Array:
 	return cells
 
 func get_tile_visibility(gx: int, gz: int) -> int:
+	if not fog_enabled:
+		return 2
 	if gx < 0 or gx >= GridManager.GRID_SIZE or gz < 0 or gz >= GridManager.GRID_SIZE:
 		return 0
 	return visibility_grid[gz * GridManager.GRID_SIZE + gx]
+
 
 func _vision_clear(sx: int, sz: int, tx: int, tz: int) -> bool:
 	ray_checks += 1

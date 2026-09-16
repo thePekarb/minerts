@@ -216,8 +216,8 @@ func toggle_view() -> void:
 	_update_visibility()
 
 func issue_order(unit: Unit, target: Vector2i) -> bool:
-	if unit.faction != "player": return false
-	if target.x < 3 or target.y < 3 or target.x > 188 or target.y > 188: return false
+	if not FactionRules.is_colony(unit.faction): return false
+	if target.x < 3 or target.y < 3 or target.x > GridManager.GRID_SIZE-4 or target.y > GridManager.GRID_SIZE-4: return false
 	if not cells.has(target) and unit.unit_type != UnitConfigs.UnitType.WORKER:
 		game.hud.show_banner("Копать тоннели могут только рабочие.")
 		return false
@@ -261,6 +261,7 @@ func enter(unit: Unit, entry: Vector2i) -> void:
 		unit.get_node("CaveLantern").visible = true
 
 func request_exit(unit: Unit) -> void:
+	if NetworkManager.route_units("exit_cave",[unit]):return
 	if not unit.underground_unit: return
 	for cave in caves:
 		var dest: Vector3 = Vector3(cave.entry.x + 0.5, FLOOR_Y, cave.entry.y + 0.5)

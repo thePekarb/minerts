@@ -8,6 +8,11 @@ signal died(building: Building)
 
 @export var faction: String = "player"
 var training_queue: Array[Dictionary] = []
+var crafting_queue: Array[Dictionary] = []
+var stored_resources: Dictionary = {}
+var output_buffer: Dictionary = {}
+var stock_visual: StorageVisual
+var farm_equipped: bool = false
 var rally_point: Vector3 = Vector3.INF
 var rally_marker: Node3D
 var config: Dictionary = {}
@@ -30,6 +35,10 @@ var production_status: String = ""
 var is_gate: bool = false
 var is_open: bool = false
 var is_gate_locked: bool = false
+var auto_opened: bool = false
+var auto_close_timer: float = 0.0
+var manual_open: bool = false
+var collision_shape: CollisionShape3D = null
 
 var footprint: Vector2i = Vector2i(1, 1)
 var rotation_degrees_y: int = 0
@@ -39,11 +48,19 @@ var assigned_miners: Array[Unit] = []
 var max_miners: int = 4
 var mine_cycle_timer: float = 0.0
 
+# Tower garrison mechanics
+var garrisoned_archer: Unit = null
+
 var mesh_root: Node3D
 var gate_door: Node3D
 var deep_ore_block: Node3D
 
+static var _next_placement_id: int = 1
+var placement_id: int = 0
+
 func init_building(type: BuildingConfigs.BuildingType, gx: int, gz: int, instant: bool = false, rot_deg: int = 0, custom_fp: Vector2i = Vector2i.ZERO) -> void:
+	placement_id = _next_placement_id
+	_next_placement_id += 1
 	collision_layer = 4
 	collision_mask = 0
 	building_type = type
@@ -71,7 +88,8 @@ func init_building(type: BuildingConfigs.BuildingType, gx: int, gz: int, instant
 		add_child(fire_light)
 
 func _build_visuals() -> void:
-	mesh_root = FrontierAssets.create_faction_building(building_type,faction)
+	mesh_root = StorageVisual.new() if building_type==BuildingConfigs.BuildingType.STORAGE else FrontierAssets.create_faction_building(building_type,faction)
+	if mesh_root is StorageVisual:stock_visual=mesh_root;stock_visual.setup(faction)
 	if mesh_root == null: mesh_root = VoxelMeshFactory.create_building_mesh(building_type)
 	add_child(mesh_root)
 
@@ -89,12 +107,16 @@ func _build_visuals() -> void:
 
 	if not find_child("CollisionShape3D", false, false):
 		var col: CollisionShape3D = CollisionShape3D.new()
+		col.name = "CollisionShape3D"
 		var box: BoxShape3D = BoxShape3D.new()
-		var fp: Vector2i = config.get("footprint", Vector2i(1, 1))
+		var fp: Vector2i = footprint
 		box.size = Vector3(float(fp.x) * 0.95, 2.0, float(fp.y) * 0.95)
 		col.shape = box
 		col.position.y = 1.0
 		add_child(col)
+		collision_shape = col
+	else:
+		collision_shape = find_child("CollisionShape3D", false, false) as CollisionShape3D
 
 func advance_construction(amount: float) -> bool:
 	if is_constructed:
@@ -119,14 +141,19 @@ func _update_construction_visuals() -> void:
 		scale = Vector3.ONE
 
 func toggle_gate(grid_mgr: GridManager = null) -> bool:
+	if NetworkManager.route_building("gate",self):return true
 	if not is_gate:
 		return false
 	if is_open:
 		is_gate_locked = true
+		manual_open = false
+		auto_opened = false
 		set_gate_open(false, grid_mgr)
 		return false
 	else:
 		is_gate_locked = false
+		manual_open = true
+		auto_opened = false
 		set_gate_open(true, grid_mgr)
 		return true
 
@@ -134,13 +161,20 @@ func set_gate_open(open_state: bool, grid_mgr: GridManager = null) -> void:
 	if not is_gate or is_open == open_state:
 		return
 	is_open = open_state
-	var collision: CollisionShape3D = get_node_or_null("CollisionShape3D")
-	if collision:
-		collision.set_deferred("disabled", is_open)
+	if collision_shape:
+		collision_shape.set_deferred("disabled", is_open)
+	var col_fallback: CollisionShape3D = get_node_or_null("CollisionShape3D")
+	if col_fallback and col_fallback != collision_shape:
+		col_fallback.set_deferred("disabled", is_open)
 
 	if gate_door:
 		gate_door.rotation.y = -PI / 2.0 if is_open else 0.0
 		gate_door.position = Vector3(-0.7 if is_open else 0.0, 0.8, 0.7 if is_open else 0.0)
+
+	if not grid_mgr and is_inside_tree():
+		var main_node: Node = get_tree().root.find_child("Main", true, false)
+		if main_node and "grid_manager" in main_node:
+			grid_mgr = main_node.grid_manager
 
 	if grid_mgr:
 		var fp: Vector2i = footprint
@@ -152,6 +186,39 @@ func set_gate_open(open_state: bool, grid_mgr: GridManager = null) -> void:
 					tile.is_gate_locked = is_gate_locked
 					grid_mgr.astar.set_point_disabled(grid_mgr.get_point_id(x, z), not is_open)
 					grid_mgr.invalidate_terrain(Vector2i(x,z))
+				if is_open:
+					grid_mgr.closed_player_gates.erase(grid_mgr.get_point_id(x, z))
+				else:
+					if faction == "player":
+						grid_mgr.closed_player_gates[grid_mgr.get_point_id(x, z)] = true
+
+func tick_gate(delta: float, all_units: Array, grid_mgr: GridManager) -> void:
+	if not is_gate or not is_constructed or not is_alive:
+		return
+	if manual_open:
+		return
+
+	var gate_center := global_position
+	var player_nearby: bool = false
+	for u in all_units:
+		if is_instance_valid(u) and u.is_alive and u.faction == faction and not u.underground_unit:
+			var dist := Vector2(u.global_position.x - gate_center.x, u.global_position.z - gate_center.z).length()
+			if dist < 3.2:
+				player_nearby = true
+				break
+
+	if player_nearby:
+		if not is_open:
+			auto_opened = true
+			is_gate_locked = false
+			set_gate_open(true, grid_mgr)
+		auto_close_timer = 2.0
+	elif auto_opened and is_open:
+		auto_close_timer -= delta
+		if auto_close_timer <= 0.0:
+			auto_opened = false
+			is_gate_locked = true
+			set_gate_open(false, grid_mgr)
 
 func upgrade_mine() -> void:
 	if building_type != BuildingConfigs.BuildingType.MINE or level >= 2:
@@ -163,6 +230,7 @@ func upgrade_mine() -> void:
 	EventBus.building_upgraded.emit(self)
 
 func eject_all_miners(grid_mgr: GridManager) -> void:
+	if NetworkManager.route_building("mine_eject",self):return
 	for m in assigned_miners:
 		if is_instance_valid(m) and m.is_alive:
 			var out_x: float = float(grid_x) + float(footprint.x) + 0.5
@@ -173,6 +241,25 @@ func eject_all_miners(grid_mgr: GridManager) -> void:
 	assigned_miners.clear()
 	EventBus.mine_miner_count_changed.emit(self, 0)
 
+func can_garrison_archer() -> bool:
+	return building_type == BuildingConfigs.BuildingType.TOWER and is_constructed and is_alive and garrisoned_archer == null
+
+func garrison_archer(u: Unit) -> bool:
+	if not can_garrison_archer() or not is_instance_valid(u) or not u.is_alive:
+		return false
+	garrisoned_archer = u
+	u.garrison_in_tower(self)
+	return true
+
+func ungarrison_archer() -> Unit:
+	if not is_instance_valid(garrisoned_archer):
+		garrisoned_archer = null
+		return null
+	var u: Unit = garrisoned_archer
+	garrisoned_archer = null
+	u.ungarrison_from_tower()
+	return u
+
 func take_damage(amount: float) -> bool:
 	if not is_alive:
 		return true
@@ -180,7 +267,24 @@ func take_damage(amount: float) -> bool:
 	health_changed.emit(health, max_health)
 	if health <= 0.0:
 		is_alive = false
+		if is_instance_valid(garrisoned_archer):
+			ungarrison_archer()
 		died.emit(self)
 		EventBus.entity_died.emit(self)
 		return true
 	return false
+
+func storage_capacity() -> int:
+	return 600 if building_type==BuildingConfigs.BuildingType.STORAGE else (500 if building_type==BuildingConfigs.BuildingType.CAMPFIRE else 0)
+func storage_used() -> int:
+	var count: int=0
+	for amount in stored_resources.values():count+=amount
+	return count
+func storage_free() -> int:
+	return maxi(0,storage_capacity()-storage_used())
+func update_stock_visuals() -> void:
+	if is_instance_valid(stock_visual):stock_visual.set_stock(stored_resources)
+func buffered_amount() -> int:
+	var count: int=0
+	for amount in output_buffer.values():count+=amount
+	return count

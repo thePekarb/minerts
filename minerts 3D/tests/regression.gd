@@ -10,19 +10,19 @@ func check(condition: bool, description: String) -> void:
 		print("PASS: ", description)
 
 func _ready() -> void:
-	# Dummy audio does not mix playback on headless runs; validate PCM directly.
+	# Dummy audio does not mix playback on headless runs; validate the current theme assets.
 	SoundManager.is_muted = true
 	var game: Main = load("res://scenes/Main.tscn").instantiate()
 	add_child(game)
 	game.set_process(false)
 	game.time_of_day_system.set_process(false)
 	check(EconomyManager.current_population == 5, "initial population matches three workers and two defenders")
-	check(SoundManager.sound_cache.has("pop") and SoundManager.sound_cache.has("hit"), "combat sounds generated")
+	check(SoundManager.has_method("play_pop") and SoundManager.has_method("play_hit"), "legacy combat sound calls remain safe")
 	SoundManager.play_pop()
 	SoundManager.play_hit()
-	check(SoundManager.sound_cache.pop.data.size() > 0 and SoundManager.sound_cache.hit.data.size() > 0, "combat audio contains PCM samples")
-	var warrior: Unit = game.spawn_unit(UnitConfigs.UnitType.WARRIOR, "player", Vector3(60.5, 0, 60.5))
-	var enemy: Unit = game.spawn_unit(UnitConfigs.UnitType.RAIDER, "enemy", Vector3(61, 0, 60.5))
+	check(SoundManager.sound_cache.has("arrow") and SoundManager.sound_cache.has("zombie") and SoundManager.sound_cache.arrow.data.size() > 0 and SoundManager.sound_cache.zombie.data.size() > 0, "current combat theme recordings contain PCM samples")
+	var warrior: Unit = game.spawn_unit(UnitConfigs.UnitType.WARRIOR, "player", Vector3(90.5, 0, 92.5))
+	var enemy: Unit = game.spawn_unit(UnitConfigs.UnitType.RAIDER, "enemy", Vector3(91.5, 0, 92.5))
 	warrior.target = enemy
 	warrior.current_order = UnitConfigs.UnitOrder.ATTACK
 	warrior.attack_timer = warrior.attack_cooldown

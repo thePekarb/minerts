@@ -1,0 +1,71 @@
+Godot Engine v4.7.stable.official.5b4e0cb0f - https://godotengine.org
+
+ERROR: Condition "ret != noErr" is true. Returning: ""
+   at: get_system_ca_certificates (platform/macos/os_macos.mm:1035)
+BOT STATE @ 30 s: buildings [1, 7, 6, 10] units [] wallet { "wood": 15, "stone": 20, "food": 180, "ore": 17, "water": 0 } population 11
+UNFINISHED: 9 at (407.5, 2.0, 80.5) progress 49.9999999999999
+UNFINISHED: 9 at (407.5, 2.0, 84.5) progress 0.0
+NEEDED: 2 center (402.5, 2.0, 80.5)
+BOT STATE @ 60 s: buildings [1, 7, 6, 10, 9, 2] units [15] wallet { "wood": 34, "stone": 3, "food": 162, "ore": 17, "water": 12, "axe": 1, "pickaxe": 0, "sword": 1 } population 12
+NEEDED: 8 center (402.5, 2.0, 80.5)
+BOT STATE @ 90 s: buildings [1, 7, 6, 10, 9, 2] units [15] wallet { "wood": 90, "stone": 8, "food": 126, "ore": 17, "water": 24, "axe": 0, "pickaxe": 0, "sword": 1, "pitchfork": 0 } population 14
+NEEDED: 8 center (402.5, 2.0, 80.5)
+BOT STATE @ 120 s: buildings [1, 7, 6, 10, 9, 2] units [15] wallet { "wood": 188, "stone": 30, "food": 138, "ore": 17, "water": 30, "axe": 0, "pickaxe": 0, "sword": 1, "pitchfork": 0 } population 14
+NEEDED: 8 center (402.5, 2.0, 80.5)
+BOT STATE @ 150 s: buildings [1, 7, 6, 10, 9, 2] units [15] wallet { "wood": 222, "stone": 22, "food": 138, "ore": 17, "water": 36, "axe": 0, "pickaxe": 0, "sword": 1, "pitchfork": 0 } population 14
+NEEDED: 8 center (402.5, 2.0, 80.5)
+BOT STATE @ 180 s: buildings [1, 7, 6, 10, 9, 2] units [15] wallet { "wood": 314, "stone": 48, "food": 138, "ore": 17, "water": 42, "axe": 0, "pickaxe": 0, "sword": 1, "pitchfork": 0 } population 14
+NEEDED: 8 center (402.5, 2.0, 80.5)
+BOT STATE @ 210 s: buildings [1, 7, 6, 10, 9, 2] units [15] wallet { "wood": 357, "stone": 66, "food": 138, "ore": 17, "water": 54, "axe": 0, "pickaxe": 0, "sword": 1, "pitchfork": 0 } population 14
+NEEDED: 8 center (402.5, 2.0, 80.5)
+BOT STATE @ 240 s: buildings [1, 7, 6, 10, 9, 2] units [15] wallet { "wood": 357, "stone": 82, "food": 138, "ore": 17, "water": 66, "axe": 0, "pickaxe": 0, "sword": 1, "pitchfork": 0 } population 14
+NEEDED: 8 center (402.5, 2.0, 80.5)
+BOT STATE @ 270 s: buildings [1, 7, 6, 10, 9, 2] units [15] wallet { "wood": 357, "stone": 96, "food": 138, "ore": 17, "water": 78, "axe": 0, "pickaxe": 0, "sword": 1, "pitchfork": 0 } population 14
+NEEDED: 8 center (402.5, 2.0, 80.5)
+BOT STATE @ 300 s: buildings [1, 7, 6, 10, 9, 2] units [15] wallet { "wood": 357, "stone": 112, "food": 138, "ore": 17, "water": 90, "axe": 0, "pickaxe": 0, "sword": 1, "pitchfork": 0 } population 14
+NEEDED: 8 center (402.5, 2.0, 80.5)
+BOT STATE @ 330 s: buildings [1, 7, 6, 10, 9, 2] units [15] wallet { "wood": 357, "stone": 126, "food": 138, "ore": 17, "water": 102, "axe": 0, "pickaxe": 0, "sword": 1, "pitchfork": 0 } population 14
+NEEDED: 8 center (402.5, 2.0, 80.5)
+BOT STATE @ 360 s: buildings [1, 7, 6, 10, 9, 2] units [15] wallet { "wood": 357, "stone": 142, "food": 138, "ore": 17, "water": 114, "axe": 0, "pickaxe": 0, "sword": 1, "pitchfork": 0 } population 14
+NEEDED: 8 center (402.5, 2.0, 80.5)
+BOT STATE @ 390 s: buildings [1, 7, 6, 10, 9, 2] units [15] wallet { "wood": 357, "stone": 156, "food": 138, "ore": 17, "water": 126, "axe": 0, "pickaxe": 0, "sword": 1, "pitchfork": 0 } population 14
+NEEDED: 8 center (402.5, 2.0, 80.5)
+BOT STATE @ 420 s: buildings [1, 7, 6, 10, 9, 2] units [15] wallet { "wood": 357, "stone": 172, "food": 138, "ore": 17, "water": 138, "axe": 0, "pickaxe": 0, "sword": 1, "pitchfork": 0 } population 14
+NEEDED: 8 center (402.5, 2.0, 80.5)
+ERROR: AI worker physically completes the barracks
+   at: push_error (core/variant/variant_utility.cpp:1023)
+   GDScript backtrace (most recent call first):
+       [0] check (res://tests/archipelago_simulation.gd:14)
+       [1] _physics_process (res://tests/archipelago_simulation.gd:39)
+PASS: AI establishes its irrigated food economy
+ERROR: AI develops a coastal port
+   at: push_error (core/variant/variant_utility.cpp:1023)
+   GDScript backtrace (most recent call first):
+       [0] check (res://tests/archipelago_simulation.gd:14)
+       [1] _physics_process (res://tests/archipelago_simulation.gd:41)
+PASS: AI replenishes its workforce through timed recruitment
+ERROR: AI produces all five military roles through the real queue
+   at: push_error (core/variant/variant_utility.cpp:1023)
+   GDScript backtrace (most recent call first):
+       [0] check (res://tests/archipelago_simulation.gd:14)
+       [1] _physics_process (res://tests/archipelago_simulation.gd:43)
+PASS: AI units explore their island
+ERROR: night monsters actually engage the goblin settlement
+   at: push_error (core/variant/variant_utility.cpp:1023)
+   GDScript backtrace (most recent call first):
+       [0] check (res://tests/archipelago_simulation.gd:14)
+       [1] _physics_process (res://tests/archipelago_simulation.gd:45)
+PASS: goblin settlement survives a complete night
+PASS: workers deliver enough resources for sustained development
+WORKER: (51.34288, 2.0, 251.3133) state 8 order 2 target @StaticBody3D@5213:<StaticBody3D#5193622378937> inventory { "type": "wood", "amount": 8 }
+WORKER: (57.14351, 3.0, 248.4991) state 8 order 2 target @StaticBody3D@5213:<StaticBody3D#5193622378937> inventory { "type": "wood", "amount": 14 }
+WORKER: (47.46239, 2.0, 255.153) state 8 order 2 target @StaticBody3D@5213:<StaticBody3D#5193622378937> inventory { "type": "wood", "amount": 14 }
+WORKER: (408.4047, 2.0, 74.51328) state 1 order 2 target Tree_starter_2453:<StaticBody3D#4734379639538> inventory { "type": "", "amount": 0 }
+WORKER: (408.3601, 2.0, 86.49975) state 1 order 2 target Tree_starter_2454:<StaticBody3D#4734463525623> inventory { "type": "", "amount": 0 }
+WORKER: (403.0, 2.0, 85.0) state 9 order 0 target @StaticBody3D@5208:<StaticBody3D#5178338335134> inventory { "type": "", "amount": 0 }
+WORKER: (403.0, 2.0, 85.0) state 9 order 0 target @StaticBody3D@5208:<StaticBody3D#5178338335134> inventory { "type": "", "amount": 0 }
+WORKER: (49.64303, 2.0, 249.5508) state 8 order 2 target @StaticBody3D@5213:<StaticBody3D#5193622378937> inventory { "type": "wood", "amount": 7 }
+WORKER: (47.31376, 2.0, 255.7457) state 8 order 2 target @StaticBody3D@5213:<StaticBody3D#5193622378937> inventory { "type": "wood", "amount": 14 }
+WORKER: (403.6334, 2.0, 77.45531) state 0 order 0 target <null> inventory { "type": "", "amount": 0 }
+DELIVERED WOOD: 521
+SIMULATION CHECKS: 9 | FAILURES: 4

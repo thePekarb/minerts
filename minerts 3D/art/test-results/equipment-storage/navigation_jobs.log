@@ -1,0 +1,10 @@
+Godot Engine v4.7.stable.official.5b4e0cb0f - https://godotengine.org
+
+ERROR: Condition "ret != noErr" is true. Returning: ""
+   at: get_system_ca_certificates (platform/macos/os_macos.mm:1035)
+PASS: eight workers navigate crowded resource sites and deliver their full loads
+PASS: storage survives simultaneous interrupted deliveries
+PASS: a newly placed obstacle triggers a detour without cancelling the order
+PASS: a carrier with a lost route replans and delivers its cargo
+PASS: an empty path never teleports a distant worker into a mine
+JOB NAVIGATION CHECKS: 5 | FAILURES: 0

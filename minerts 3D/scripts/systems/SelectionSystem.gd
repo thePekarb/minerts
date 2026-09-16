@@ -1,6 +1,7 @@
 class_name SelectionSystem
 extends Node
 
+var command_faction: String="player"
 var camera: RTSCamera
 var grid_manager: GridManager
 var resource_spawner: ResourceSpawner = null
@@ -18,6 +19,7 @@ var last_clicked_unit: Unit = null
 
 # Callback references to other systems if needed
 var lumber_zone_system: Node = null
+var terraforming_system: Node = null
 
 func init_selection(cam: RTSCamera, grid_mgr: GridManager, spawner: ResourceSpawner = null) -> void:
 	camera = cam
@@ -40,7 +42,8 @@ func select_single_unit(unit: Unit, add_to_selection: bool = false) -> void:
 	if not add_to_selection:
 		clear_selection()
 
-	if is_instance_valid(unit) and unit.is_alive and unit.visible and unit.faction == "player" and unit.state != UnitConfigs.UnitState.MINING_INSIDE and not selected_units.has(unit):
+	var my_faction: String = "player" if NetworkManager.in_match else GameSettings.player_faction
+	if is_instance_valid(unit) and unit.is_alive and unit.visible and unit.faction == my_faction and unit.state != UnitConfigs.UnitState.MINING_INSIDE and not selected_units.has(unit):
 		selected_units.append(unit)
 		unit.set_selected(true)
 
@@ -56,8 +59,9 @@ func select_units_in_box(start_screen: Vector2, end_screen: Vector2, all_player_
 		absf(end_screen.y - start_screen.y)
 	)
 
+	var my_faction: String = "player" if NetworkManager.in_match else GameSettings.player_faction
 	for u in all_player_units:
-		if not is_instance_valid(u) or not u.is_alive or u.faction != "player":
+		if not is_instance_valid(u) or not u.is_alive or u.faction != my_faction:
 			continue
 		if u.state == UnitConfigs.UnitState.MINING_INSIDE or not u.visible:
 			continue
@@ -72,8 +76,9 @@ func select_units_in_box(start_screen: Vector2, end_screen: Vector2, all_player_
 
 func select_all_of_type(type: UnitConfigs.UnitType, all_player_units: Array[Unit]) -> void:
 	clear_selection()
+	var my_faction: String = "player" if NetworkManager.in_match else GameSettings.player_faction
 	for u in all_player_units:
-		if is_instance_valid(u) and u.is_alive and u.faction == "player" and u.unit_type == type:
+		if is_instance_valid(u) and u.is_alive and u.faction == my_faction and u.unit_type == type:
 			if u.state != UnitConfigs.UnitState.MINING_INSIDE and u.visible:
 				selected_units.append(u)
 				u.set_selected(true)
@@ -81,6 +86,7 @@ func select_all_of_type(type: UnitConfigs.UnitType, all_player_units: Array[Unit
 	if not selected_units.is_empty():
 		SoundManager.play_select()
 	EventBus.selection_changed.emit(selected_units, selected_building)
+
 
 func select_building(b: Building) -> void:
 	clear_selection()
@@ -113,7 +119,7 @@ func handle_right_click(hit_result: Dictionary, ground_pos: Vector3) -> void:
 		return
 
 	var collider: Object = hit_result.get("collider", null)
-	if collider is Node3D:
+	if collider is Node3D and not NetworkManager.applying_command:
 		if not collider.is_visible_in_tree():
 			return
 		if collider.global_position.y >= -1.0 and (collider is Entity or collider.has_meta("resource_type") or collider.has_meta("poi_type")):
@@ -132,10 +138,10 @@ func handle_right_click(hit_result: Dictionary, ground_pos: Vector3) -> void:
 	if collider is Entity or (collider and collider.get_parent() is Entity):
 		var target_e: Entity = collider if collider is Entity else collider.get_parent()
 		if is_instance_valid(target_e) and target_e.is_alive:
-			if target_e is Unit and UnitConfigs.is_vessel(target_e.unit_type) and target_e.faction=="player":
+			if target_e is Unit and UnitConfigs.is_vessel(target_e.unit_type) and target_e.faction==command_faction:
 				for u in selected_units.duplicate():grid_manager.transport.board(u,target_e)
 				return
-			if target_e.faction in ["enemy","neutral","predator","goblin"]:
+			if FactionRules.hostile(command_faction,target_e.faction):
 				_issue_attack_order(target_e)
 				return
 
@@ -167,13 +173,14 @@ func handle_right_click(hit_result: Dictionary, ground_pos: Vector3) -> void:
 	_issue_move_order(ground_pos)
 
 func _handle_building_target(b: Building) -> void:
-	if b.faction!="player":
+	if b.faction!=command_faction:
+		if not FactionRules.hostile(command_faction,b.faction):return
 		_issue_attack_order(b)
 		return
 	if not b.is_constructed:
 		# Build order for workers
 		for u in selected_units:
-			if u.unit_type == UnitConfigs.UnitType.WORKER:
+			if UnitConfigs.is_worker(u.unit_type):
 				cancel_assignments(u)
 				u.current_order = UnitConfigs.UnitOrder.BUILD
 				u.state = UnitConfigs.UnitState.MOVING
@@ -188,7 +195,7 @@ func _handle_building_target(b: Building) -> void:
 	elif b.building_type == BuildingConfigs.BuildingType.MINE:
 		# Send workers to garrison
 		for u in selected_units:
-			if u.unit_type == UnitConfigs.UnitType.WORKER and b.assigned_miners.size() < b.max_miners:
+			if UnitConfigs.is_worker(u.unit_type) and b.assigned_miners.size() < b.max_miners:
 				if not b.assigned_miners.has(u):
 					cancel_assignments(u)
 					b.assigned_miners.append(u)
@@ -200,10 +207,37 @@ func _handle_building_target(b: Building) -> void:
 					u.state = UnitConfigs.UnitState.MOVING
 					EventBus.mine_miner_count_changed.emit(b, b.assigned_miners.size())
 		SoundManager.play_ore_pick(b.global_position)
+	elif b.building_type == BuildingConfigs.BuildingType.TOWER:
+		if b.can_garrison_archer():
+			var best_archer: Unit = null
+			var min_dist: float = 999999.0
+			for u in selected_units:
+				if is_instance_valid(u) and u.is_alive and u.faction == command_faction:
+					if u.unit_type in [UnitConfigs.UnitType.ARCHER, UnitConfigs.UnitType.GOBLIN_ARCHER] or u.config.get("ranged", false):
+						var d: float = u.global_position.distance_to(b.global_position)
+						if d < min_dist:
+							min_dist = d
+							best_archer = u
+			if best_archer:
+				cancel_assignments(best_archer)
+				best_archer.target = b
+				best_archer.current_order = UnitConfigs.UnitOrder.INTERACT
+				var path: Array[Vector3] = grid_manager.find_path(best_archer.global_position, b.global_position)
+				best_archer.set_path(path)
+				best_archer.state = UnitConfigs.UnitState.MOVING
+				SoundManager.play_click()
+				return
+		_issue_move_order(b.global_position)
 	else:
 		_issue_move_order(b.global_position)
 
 func cancel_assignments(u: Unit) -> void:
+	if is_instance_valid(u.garrisoned_tower):
+		u.ungarrison_from_tower()
+	u.hold_position_anchor = Vector3.INF
+	u.patrol_start = Vector3.INF
+	u.patrol_end = Vector3.INF
+	u.remove_meta("haul_source");u.remove_meta("hauler")
 	u.route_version+=1
 	if is_instance_valid(grid_manager.transport):grid_manager.transport.cancel_boarding(u)
 	# Explicit commands replace persistent jobs as well as the current path.
@@ -215,6 +249,8 @@ func cancel_assignments(u: Unit) -> void:
 				zone.assigned_workers.erase(u)
 				EventBus.lumber_zone_workers_changed.emit(zone, zone.assigned_workers.size())
 	u.assigned_lumber_zone_id = ""
+	if terraforming_system and terraforming_system.has_method("unassign_worker"):
+		terraforming_system.unassign_worker(u)
 	if u.mining_building_id != "":
 		var mine: Object = instance_from_id(int(u.mining_building_id))
 		if is_instance_valid(mine) and mine is Building:
@@ -256,7 +292,7 @@ func _issue_gather_order(res_node: Node) -> void:
 	for u in selected_units:
 		if not is_instance_valid(u) or not u.is_alive:
 			continue
-		if u.unit_type == UnitConfigs.UnitType.WORKER:
+		if UnitConfigs.is_worker(u.unit_type):
 			cancel_assignments(u)
 			u.current_order = UnitConfigs.UnitOrder.GATHER
 			u.target = res_node

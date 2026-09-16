@@ -75,7 +75,10 @@ func _physics_process(_delta: float) -> void:
 			game.raid_system.enemy_units.back().set_meta("test_origin", index)
 	if frames >= 7200:
 		if reached_origins.size()!=4:
-			for enemy in game.raid_system.enemy_units:print("RAID DEBUG ",enemy.get_meta("test_origin",-1)," pos ",enemy.position," target ",enemy.target," state ",enemy.state," path ",enemy.path.slice(enemy.waypoint_index,enemy.waypoint_index+4))
+			for enemy in game.raid_system.enemy_units:
+				print("RAID DEBUG ",enemy.get_meta("test_origin",-1)," pos ",enemy.position," target ",enemy.target," state ",enemy.state," path ",enemy.path.slice(enemy.waypoint_index,enemy.waypoint_index+4)," recovery ",enemy.navigation.recovery_count)
+				for other in enemy.navigation.nearby:print("NEIGHBOR ",other.unit_type," ",other.position," faction ",other.faction)
+				for i in range(enemy.get_slide_collision_count()):print("COLLISION ",enemy.get_slide_collision(i).get_collider())
 		check(reached_origins.size() == 4, "real physics movement reaches base from all four altars")
 		print("NIGHT RAID CHECKS: %d | FAILURES: %d" % [checks, failures])
 		get_tree().quit(failures)

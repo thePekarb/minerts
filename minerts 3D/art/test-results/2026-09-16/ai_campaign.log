@@ -1,0 +1,32 @@
+Godot Engine v4.7.stable.official.5b4e0cb0f - https://godotengine.org
+
+ERROR: Condition "ret != noErr" is true. Returning: ""
+   at: get_system_ca_certificates (platform/macos/os_macos.mm:1035)
+PASS: two permanent central-island guardians exist
+PASS: stone colossus has a distinct tank profile
+PASS: storm warden is a distinct ranged guardian
+PASS: guardian area attack has a visible retreat window
+PASS: leaving the marked impact zone avoids damage
+PASS: guardian area attack damages enemies inside the marker
+PASS: guardian does not immediately respawn
+PASS: guardian respawns after its lair cooldown
+PASS: later waves increase individual health, damage and armor
+PASS: goblins have reachable caves on their own island
+PASS: bot cave entry does not change the player view
+PASS: bot assigns a separate reconnaissance party to a cave
+PASS: goblin island has a usable embarkation coast
+EXPEDITION 30s: sailing cargo 5
+EXPEDITION 60s: sailing cargo 5
+EXPEDITION 90s: exploring cargo 0
+EXPEDITION 120s: exploring cargo 0
+EXPEDITION 150s: exploring cargo 0
+EXPEDITION 180s: returning cargo 0
+EXPEDITION 210s: returning cargo 0
+PASS: bot scouts physically enter their cave during the expedition
+PASS: goblin expedition physically sails and disembarks on a new island
+PASS: landing marks the home island as explored by the bot
+PASS: landing party finds player units through local reconnaissance
+PASS: goblin landing party attacks the player's defenders
+PASS: galley returns to its home port for the next expedition
+PASS: expedition worker completes an outpost on the captured coast
+CAMPAIGN CHECKS: 20 | FAILURES: 0

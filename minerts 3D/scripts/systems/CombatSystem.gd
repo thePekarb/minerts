@@ -17,32 +17,76 @@ func process_combat(delta: float, all_units: Array[Unit], all_buildings: Array[B
 		if u.get_meta("guardian",false):continue
 		if u.faction == "enemy":
 			_process_enemy_unit(u, delta, all_units, all_buildings)
-		elif u.faction in ["player","goblin"]:
+		elif FactionRules.is_colony(u.faction):
 			_process_player_combat_unit(u, delta, all_units)
 	for b in all_buildings.duplicate():
 		if is_instance_valid(b) and b.is_alive and b.is_constructed and b.building_type == BuildingConfigs.BuildingType.TOWER:
 			b.mine_cycle_timer += delta
 			if b.mine_cycle_timer >= 1.3:
-				var target: Unit = _find_nearest_target(b.global_position, all_units, "enemy", 10.0,b.faction=="goblin")
+				var target: Unit = _find_nearest_target(b.global_position, all_units, "enemy", 10.0,b.faction=="goblin",b.faction)
 				if target:
 					b.mine_cycle_timer = 0.0
 					_spawn_projectile(b.global_position + Vector3(0, 3.2, 0), target, 16.0,b.faction)
 					SoundManager.play_arrow(b.global_position)
 
 func _process_player_combat_unit(u: Unit, delta: float, units: Array[Unit]) -> void:
-	u.target_scan_timer-=delta
-	if u.target_scan_timer<=0 and (u.state == UnitConfigs.UnitState.IDLE or (u.faction=="goblin" and u.current_order==UnitConfigs.UnitOrder.PATROL)) and not UnitConfigs.is_worker(u.unit_type) and not UnitConfigs.is_vessel(u.unit_type) and u.attack_damage>0:
-		u.target_scan_timer=.3+float(u.get_instance_id()%11)*.01
-		var target: Unit = _find_nearest_target(u.global_position, units, "enemy", u.config.get("vision_range", 8.0), u.faction=="goblin")
+	# Work targets share Unit.target with combat; only combat orders may attack them.
+	if u.current_order in [UnitConfigs.UnitOrder.GATHER,UnitConfigs.UnitOrder.BUILD,UnitConfigs.UnitOrder.INTERACT]:return
+	if is_instance_valid(u.garrisoned_tower):
+		u.global_position = u.garrisoned_tower.global_position + Vector3(0, 2.1, 0)
+
+	# Handle Patrol waypoint switching when idle or finished moving
+	if u.current_order == UnitConfigs.UnitOrder.PATROL and (u.target == null or not _valid_target(u.target)):
+		if u.path.is_empty() or u.state == UnitConfigs.UnitState.IDLE:
+			u.patrol_wait_timer -= delta
+			if u.patrol_wait_timer <= 0.0:
+				u.patrol_wait_timer = 1.0
+				var dest: Vector3 = u.patrol_end if u.patrol_to_end else u.patrol_start
+				u.patrol_to_end = not u.patrol_to_end
+				if dest != Vector3.INF:
+					var route: Array[Vector3] = grid_manager.find_unit_path(u, dest, true)
+					if not route.is_empty():
+						u.set_path(route)
+						u.state = UnitConfigs.UnitState.MOVING
+
+	# Handle Hold Position return to anchor when idle
+	if u.current_order == UnitConfigs.UnitOrder.HOLD_POSITION and not is_instance_valid(u.garrisoned_tower) and (u.target == null or not _valid_target(u.target)):
+		if u.hold_position_anchor != Vector3.INF and u.position.distance_to(u.hold_position_anchor) > 1.2:
+			if u.path.is_empty() and u.state != UnitConfigs.UnitState.MOVING:
+				var ret_route: Array[Vector3] = grid_manager.find_path(u.global_position, u.hold_position_anchor)
+				if not ret_route.is_empty():
+					u.set_path(ret_route)
+					u.state = UnitConfigs.UnitState.MOVING
+		elif u.target == null and u.state != UnitConfigs.UnitState.MOVING:
+			u.state = UnitConfigs.UnitState.DEFENDING
+
+	# Target scanning
+	u.target_scan_timer -= delta
+	var can_scan: bool = (u.state in [UnitConfigs.UnitState.IDLE, UnitConfigs.UnitState.DEFENDING] or u.current_order in [UnitConfigs.UnitOrder.PATROL, UnitConfigs.UnitOrder.HOLD_POSITION] or (u.faction == "goblin" and u.current_order == UnitConfigs.UnitOrder.PATROL))
+	if u.target_scan_timer <= 0 and can_scan and not UnitConfigs.is_worker(u.unit_type) and not UnitConfigs.is_vessel(u.unit_type) and u.attack_damage > 0:
+		u.target_scan_timer = 0.3 + float(u.get_instance_id() % 11) * 0.01
+		var scan_range: float = u.config.get("vision_range", 8.0)
+		var target: Unit = _find_nearest_target(u.global_position, units, "enemy", scan_range, u.faction == "goblin",u.faction)
 		if target:
-			u.target = target
-			u.current_order = UnitConfigs.UnitOrder.ATTACK
-	if u.current_order != UnitConfigs.UnitOrder.ATTACK:
-		return
+			if is_instance_valid(u.garrisoned_tower) or (u.current_order == UnitConfigs.UnitOrder.HOLD_POSITION and u.config.get("ranged", false)):
+				if _target_distance(u, target) <= u.attack_range:
+					u.target = target
+			elif u.current_order == UnitConfigs.UnitOrder.HOLD_POSITION and u.hold_position_anchor != Vector3.INF:
+				if target.global_position.distance_to(u.hold_position_anchor) <= 5.0:
+					u.target = target
+			else:
+				u.target = target
+				if u.current_order not in [UnitConfigs.UnitOrder.PATROL,UnitConfigs.UnitOrder.HOLD_POSITION]:u.current_order=UnitConfigs.UnitOrder.ATTACK
+
+	if u.current_order not in [UnitConfigs.UnitOrder.ATTACK,UnitConfigs.UnitOrder.PATROL,UnitConfigs.UnitOrder.HOLD_POSITION] and not is_instance_valid(u.garrisoned_tower):return
+
 	if not _valid_target(u.target):
 		u.target = null
-		u.stop()
+		if u.current_order == UnitConfigs.UnitOrder.ATTACK:
+			u.current_order = UnitConfigs.UnitOrder.MOVE
+			u.stop()
 		return
+
 	_attack_or_chase(u, u.target, delta)
 
 func _process_enemy_unit(u: Unit, delta: float, units: Array[Unit], buildings: Array[Building]) -> void:
@@ -90,10 +134,62 @@ func _target_distance(u: Unit, target: Node3D) -> float:
 	return u.global_position.distance_to(target.global_position)
 
 func _attack_or_chase(u: Unit, target: Node3D, delta: float) -> void:
+	if (target is Entity or target is Building) and not FactionRules.hostile(u.faction,target.faction):u.target=null;u.stop();return
 	if target is Unit and target.underground_unit != u.underground_unit:
 		u.target = null
 		u.stop()
 		return
+
+	# Garrisoned archer on tower
+	if is_instance_valid(u.garrisoned_tower):
+		u.global_position = u.garrisoned_tower.global_position + Vector3(0, 2.1, 0)
+		if _target_distance(u, target) <= u.attack_range:
+			u.stop()
+			u.state = UnitConfigs.UnitState.ATTACKING
+			u.attack_timer += delta
+			var direction: Vector3 = target.global_position - u.global_position
+			if direction.length_squared() > 0.001:
+				u.rotation.y = atan2(direction.x, direction.z)
+			if u.attack_timer >= u.attack_cooldown:
+				u.attack_timer = 0.0
+				_spawn_projectile(u.global_position + Vector3(0, 1.1, 0), target, u.attack_damage, u.faction)
+				SoundManager.play_arrow(u.global_position)
+		else:
+			u.target = null
+			u.state = UnitConfigs.UnitState.DEFENDING
+		return
+
+	# Hold position unit
+	if u.current_order == UnitConfigs.UnitOrder.HOLD_POSITION:
+		if u.config.get("ranged", false):
+			if _target_distance(u, target) <= u.attack_range:
+				u.stop()
+				u.state = UnitConfigs.UnitState.ATTACKING
+				u.attack_timer += delta
+				var direction: Vector3 = target.global_position - u.global_position
+				if direction.length_squared() > 0.001:
+					u.rotation.y = atan2(direction.x, direction.z)
+				if u.attack_timer >= u.attack_cooldown:
+					u.attack_timer = 0.0
+					_spawn_projectile(u.global_position + Vector3(0, 1.1, 0), target, u.attack_damage, u.faction)
+					SoundManager.play_arrow(u.global_position)
+			else:
+				u.target = null
+				u.state = UnitConfigs.UnitState.DEFENDING
+			return
+		else:
+			if u.hold_position_anchor != Vector3.INF:
+				if u.position.distance_to(u.hold_position_anchor) > 4.5 or target.global_position.distance_to(u.hold_position_anchor) > 5.5:
+					u.target = null
+					var ret_path: Array[Vector3] = grid_manager.find_path(u.global_position, u.hold_position_anchor)
+					if not ret_path.is_empty():
+						u.set_path(ret_path)
+						u.state = UnitConfigs.UnitState.MOVING
+					else:
+						u.stop()
+						u.state = UnitConfigs.UnitState.DEFENDING
+					return
+
 	if u.config.get("ranged",false) and target is Unit and u.position.distance_to(target.position)<2.4 and u.repath_timer<=0 and u.health<u.max_health*.65:
 		u.repath_timer=1.2
 		var retreat: Vector3 = u.position+(u.position-target.position).normalized()*3.0
@@ -116,12 +212,6 @@ func _attack_or_chase(u: Unit, target: Node3D, delta: float) -> void:
 				target.take_damage(u.attack_damage)
 				if u.unit_type == UnitConfigs.UnitType.ZOMBIE:
 					SoundManager.play_zombie(u.global_position)
-				elif u.unit_type in [UnitConfigs.UnitType.WARRIOR, UnitConfigs.UnitType.KNIGHT, UnitConfigs.UnitType.GUARD, UnitConfigs.UnitType.GOBLIN_WARRIOR]:
-					SoundManager.play_knife_scrape(u.global_position)
-				elif u.unit_type == UnitConfigs.UnitType.WOLF:
-					SoundManager.play_wolf_growl(u.global_position)
-				else:
-					SoundManager.play_attack()
 	elif u.repath_timer <= 0.0:
 		# Throttle expensive A* calls and refresh paths when targets move.
 		u.repath_timer = 0.65
@@ -201,13 +291,13 @@ func _spawn_projectile(from_pos: Vector3, target: Node3D, damage: float, faction
 	projectile.arcane=arcane
 	projectile.init_projectile(from_pos, target, damage)
 
-func _find_nearest_target(pos: Vector3, units: Array[Unit], faction: String, radius: float, ignore_player_fog: bool = false) -> Unit:
+func _find_nearest_target(pos: Vector3, units: Array[Unit], faction: String, radius: float, ignore_player_fog: bool = false, source_faction: String="") -> Unit:
 	var best: Unit
 	var distance_squared: float = radius * radius
 	for unit in grid_manager.unit_index.query(get_tree(),pos,radius):
-		if not is_instance_valid(unit) or not unit.is_alive or (unit.faction != faction and not (faction=="enemy" and (unit.faction=="predator" or unit.faction==("player" if ignore_player_fog else "goblin")))) or unit.state == UnitConfigs.UnitState.MINING_INSIDE or is_instance_valid(unit.embarked_in):
+		if not is_instance_valid(unit) or not unit.is_alive or unit.faction=="neutral" or (not FactionRules.hostile(source_faction,unit.faction) if source_faction!="" else (unit.faction != faction and not (faction=="enemy" and (unit.faction=="predator" or unit.faction==("player" if ignore_player_fog else "goblin"))))) or unit.state == UnitConfigs.UnitState.MINING_INSIDE or is_instance_valid(unit.embarked_in):
 			continue
-		if faction == "enemy" and not unit.underground_unit and not ignore_player_fog:
+		if faction == "enemy" and not unit.underground_unit and not ignore_player_fog and not NetworkManager.in_match:
 			var tile: Tile = grid_manager.get_tile(floori(unit.position.x), floori(unit.position.z))
 			if tile == null or not tile.is_visible:
 				continue
@@ -235,7 +325,7 @@ func find_colonist(pos: Vector3, units: Array[Unit], radius: float) -> Unit:
 	var nearest: Unit
 	var distance: float = radius*radius
 	for unit in grid_manager.unit_index.query(get_tree(),pos,radius):
-		if not is_instance_valid(unit) or not unit.is_alive or unit.faction not in ["player","goblin"] or unit.state==UnitConfigs.UnitState.MINING_INSIDE or is_instance_valid(unit.embarked_in):continue
+		if not is_instance_valid(unit) or not unit.is_alive or not FactionRules.is_colony(unit.faction) or unit.state==UnitConfigs.UnitState.MINING_INSIDE or is_instance_valid(unit.embarked_in):continue
 		if (pos.y < -1.0)!=unit.underground_unit:continue
 		var d: float = pos.distance_squared_to(unit.position)
 		if d<distance and grid_manager.has_line_of_sight(pos,unit.position):nearest=unit;distance=d

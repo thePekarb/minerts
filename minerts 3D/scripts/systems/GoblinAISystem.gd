@@ -12,15 +12,33 @@ var expedition: GoblinExpeditionSystem
 var economy_age: float = 0.0
 var site_retry: float = 0.0
 const ARMY: Array[UnitConfigs.UnitType] = [UnitConfigs.UnitType.GOBLIN_WARRIOR,UnitConfigs.UnitType.GOBLIN_ARCHER,UnitConfigs.UnitType.GOBLIN_SPEARMAN,UnitConfigs.UnitType.SPIDER_RIDER,UnitConfigs.UnitType.TROLL]
-const PLAN: Array[BuildingConfigs.BuildingType] = [BuildingConfigs.BuildingType.HUT,BuildingConfigs.BuildingType.WELL,BuildingConfigs.BuildingType.FARM,BuildingConfigs.BuildingType.MINE,BuildingConfigs.BuildingType.BARRACKS,BuildingConfigs.BuildingType.STORAGE,BuildingConfigs.BuildingType.PORT,BuildingConfigs.BuildingType.TOWER]
+const PLAN: Array[BuildingConfigs.BuildingType] = [BuildingConfigs.BuildingType.HUT,BuildingConfigs.BuildingType.WORKSHOP,BuildingConfigs.BuildingType.MINE,BuildingConfigs.BuildingType.STORAGE,BuildingConfigs.BuildingType.BARRACKS,BuildingConfigs.BuildingType.WELL,BuildingConfigs.BuildingType.FARM,BuildingConfigs.BuildingType.PORT,BuildingConfigs.BuildingType.TOWER]
 func setup(main: Main) -> void:
 	game=main;rng.seed=71024;FactionEconomy.reset_bot()
-	place(BuildingConfigs.BuildingType.CAMPFIRE,Vector2i(402,80),true)
+	var g_spawn := Vector2i(402, 80)
+	if game.terrain_generator and not game.terrain_generator.world_info.is_empty():
+		var raw_g = game.terrain_generator.world_info.get("goblin_spawn", [402, 80])
+		if raw_g is Array and raw_g.size() >= 2:
+			g_spawn = Vector2i(raw_g[0], raw_g[1])
+		elif raw_g is Vector2i:
+			g_spawn = raw_g
+	if NetworkManager.in_match:
+		var bot_index: int=-1
+		var slots: Array=GameSettings.get_active_slots()
+		for i in range(slots.size()):
+			if slots[i].get("type")=="bot" and slots[i].get("faction")=="goblin":bot_index=i;break
+		if bot_index<0:set_process(false);return
+		var raw_spawn=game.terrain_generator.world_info.spawns[bot_index]
+		g_spawn=Vector2i(raw_spawn[0],raw_spawn[1]) if raw_spawn is Array else raw_spawn
+	var gy: float = game.grid_manager.get_height(g_spawn.x, g_spawn.y)
+	center = Vector3(float(g_spawn.x) + 0.5, gy, float(g_spawn.y) + 0.5)
+	place(BuildingConfigs.BuildingType.CAMPFIRE, g_spawn, true)
 	for offset in [Vector3(-3,0,-2),Vector3(3,0,-2),Vector3(-3,0,2),Vector3(3,0,2)]:
 		game.spawn_unit(UnitConfigs.UnitType.GOBLIN_WORKER,"goblin",center+offset)
 	game.spawn_unit(UnitConfigs.UnitType.GOBLIN_WARRIOR,"goblin",center+Vector3(0,0,-4))
 	game.spawn_unit(UnitConfigs.UnitType.GOBLIN_ARCHER,"goblin",center+Vector3(2,0,-4))
 	expedition=GoblinExpeditionSystem.new();add_child(expedition);expedition.setup(self)
+
 func own_units() -> Array[Unit]:
 	var result: Array[Unit] = []
 	for u in game.all_units:
@@ -77,23 +95,26 @@ func _process(delta: float) -> void:
 			if route.is_empty():continue
 			game.selection_system.cancel_assignments(u)
 			u.target=b;u.current_order=UnitConfigs.UnitOrder.BUILD;u.set_path(route);u.state=UnitConfigs.UnitState.MOVING;break
+	_plan_equipment(buildings,workers)
+	var local_workers: int=workers.filter(func(u):return u.position.distance_squared_to(center)<10000).size()
+	var worker_goal: int=10 if buildings.any(func(b):return b.building_type==BuildingConfigs.BuildingType.BARRACKS and b.is_constructed) else 6
 	var farm_count: int = buildings.filter(func(b):return b.building_type==BuildingConfigs.BuildingType.FARM and b.is_constructed).size()
 	for b in buildings:
 		if not b.is_constructed or not b.training_queue.is_empty():continue
-		if b.building_type==BuildingConfigs.BuildingType.CAMPFIRE and workers.size()<10:
+		if b.building_type==BuildingConfigs.BuildingType.CAMPFIRE and b.position.distance_squared_to(center)<10000 and local_workers<worker_goal:
 			game.production_system.enqueue(b,UnitConfigs.UnitType.GOBLIN_WORKER)
-		elif b.building_type==BuildingConfigs.BuildingType.BARRACKS and units.size()<28 and farm_count>0:
+		elif b.building_type==BuildingConfigs.BuildingType.BARRACKS and units.size()<28:
 			var next: UnitConfigs.UnitType = ARMY[army_cursor%ARMY.size()]
 			var wallet: Dictionary = FactionEconomy.resources("goblin")
 			var soldiers: int = units.filter(func(u):return not UnitConfigs.is_worker(u.unit_type) and not UnitConfigs.is_vessel(u.unit_type)).size()
-			var reserve: int = 0 if soldiers<4 else (25 if needed==null else 55)
-			if soldiers>=9 and buildings.any(func(p):return p.building_type==BuildingConfigs.BuildingType.PORT and p.is_constructed) and not units.any(func(v):return UnitConfigs.is_vessel(v.unit_type)):reserve=maxi(reserve,110)
+			var reserve: int = 0 if soldiers<4 else (25 if needed==null else maxi(55,BuildingConfigs.get_config(needed).cost.get("wood",0)))
+			if soldiers>=5 and buildings.any(func(p):return p.building_type==BuildingConfigs.BuildingType.PORT and p.is_constructed) and not units.any(func(v):return UnitConfigs.is_vessel(v.unit_type)):reserve=maxi(reserve,110)
 			if wallet.wood-UnitConfigs.get_config(next).cost.get("wood",0)>=reserve and wallet.food>=45:
 				if game.production_system.enqueue(b,next)=="":army_cursor+=1
 		elif b.building_type==BuildingConfigs.BuildingType.PORT and not units.any(func(u):return UnitConfigs.is_vessel(u.unit_type)) and farm_count>=2:
 			game.production_system.enqueue(b,UnitConfigs.UnitType.GALLEY)
 	for b in buildings:
-		if b.building_type==BuildingConfigs.BuildingType.MINE and b.is_constructed and b.assigned_miners.size()<2 and workers.size()>=7:
+		if b.building_type==BuildingConfigs.BuildingType.MINE and b.is_constructed and b.assigned_miners.size()<(2 if local_workers>=7 else 1) and local_workers>=5:
 			for u in workers:
 				if u.current_order==UnitConfigs.UnitOrder.BUILD or u.mining_building_id!="" or u.inventory.get("amount",0)>0:continue
 				var route: Array[Vector3] = game.grid_manager.find_unit_path(u,b.position,true)
@@ -101,9 +122,13 @@ func _process(delta: float) -> void:
 				game.selection_system.cancel_assignments(u)
 				u.mining_building_id=str(b.get_instance_id());b.assigned_miners.append(u)
 				u.target=b;u.current_order=UnitConfigs.UnitOrder.MOVE;u.set_path(route);u.state=UnitConfigs.UnitState.MOVING;break
-		if b.building_type==BuildingConfigs.BuildingType.MINE and b.level==1 and FactionEconomy.resources("goblin").wood>120 and FactionEconomy.spend("goblin",b.config.get("upgrade_cost",{"wood":40,"stone":30})):b.upgrade_mine()
+		if b.building_type==BuildingConfigs.BuildingType.MINE and b.level==1 and buildings.any(func(ready):return ready.building_type==BuildingConfigs.BuildingType.BARRACKS and ready.is_constructed) and FactionEconomy.resources("goblin").stone>=65 and FactionEconomy.resources("goblin").wood>120 and FactionEconomy.spend("goblin",b.config.get("upgrade_cost",{"wood":40,"stone":30})):b.upgrade_mine()
 	for i in range(workers.size()):
 		var u: Unit = workers[i]
+		# Keep one available courier for farm/mine output instead of assigning every worker to wood.
+		if i==workers.size()-1 and workers.size()>=5 and buildings.any(func(b):return b.building_type in [BuildingConfigs.BuildingType.FARM,BuildingConfigs.BuildingType.MINE]):
+			if u.state==UnitConfigs.UnitState.IDLE and u.inventory.amount==0 and u.mining_building_id=="":u.current_order=UnitConfigs.UnitOrder.MOVE;u.target=null
+			continue
 		if u.mining_building_id!="" or u.current_order==UnitConfigs.UnitOrder.BUILD or u.state not in [UnitConfigs.UnitState.IDLE,UnitConfigs.UnitState.DEFENDING]:continue
 		if u.inventory.get("amount",0)>0:u.current_order=UnitConfigs.UnitOrder.GATHER;game.gathering_system._send_to_storage(u);continue
 		u.set_meta("gather_kind","food" if i%4==2 and FactionEconomy.resources("goblin").food<75 else "wood")
@@ -125,8 +150,12 @@ func _process(delta: float) -> void:
 func _next_building(buildings: Array[Building], population: int) -> Variant:
 	var counts: Dictionary = {}
 	for b in buildings:counts[b.building_type]=counts.get(b.building_type,0)+1
+	var local_free: int=0
+	for b in buildings:
+		if b.is_constructed and b.position.distance_squared_to(center)<10000:local_free+=b.storage_free()
+	if game.storage_system and local_free<80 and not buildings.any(func(b):return b.building_type==BuildingConfigs.BuildingType.STORAGE and not b.is_constructed):return BuildingConfigs.BuildingType.STORAGE
 	if game.production_system.population("goblin")>=game.production_system.capacity("goblin")-2 and counts.get(BuildingConfigs.BuildingType.HUT,0)<6:return BuildingConfigs.BuildingType.HUT
-	if counts.get(BuildingConfigs.BuildingType.FARM,0)<2 and counts.has(BuildingConfigs.BuildingType.MINE):return BuildingConfigs.BuildingType.FARM
+	if counts.get(BuildingConfigs.BuildingType.FARM,0)==1 and counts.has(BuildingConfigs.BuildingType.WELL) and counts.has(BuildingConfigs.BuildingType.BARRACKS):return BuildingConfigs.BuildingType.FARM
 	for type in PLAN:
 		if not counts.has(type):return type
 	if counts.get(BuildingConfigs.BuildingType.FARM,0)<3:return BuildingConfigs.BuildingType.FARM
@@ -152,14 +181,14 @@ func _defend_and_patrol(units: Array[Unit]) -> void:
 			threats.sort_custom(func(a,b):return a.position.distance_squared_to(u.position)<b.position.distance_squared_to(u.position))
 			u.target=threats[0];u.current_order=UnitConfigs.UnitOrder.ATTACK
 		elif u.state==UnitConfigs.UnitState.IDLE:
-			var destination: Vector3 = game.grid_manager.find_free_position(center+Vector3(rng.randf_range(-25,25),0,rng.randf_range(-25,25)))
+			var destination: Vector3 = game.grid_manager.find_free_position(center+Vector3(rng.randf_range(-12,12),0,rng.randf_range(-12,12)))
 			u.current_order=UnitConfigs.UnitOrder.PATROL;u.target=null;u.set_path(game.grid_manager.find_unit_path(u,destination,true));u.state=UnitConfigs.UnitState.MOVING
 func find_site(type: BuildingConfigs.BuildingType) -> Vector2i:
 	var fp: Vector2i = BuildingConfigs.get_config(type).footprint
-	for radius in range(5,60 if type==BuildingConfigs.BuildingType.PORT else 26,3):
-		for dx in range(-radius,radius+1,3):
-			for dz in range(-radius,radius+1,3):
-				if maxi(absi(dx),absi(dz))<radius-2:continue
+	for radius in range(4,60 if type==BuildingConfigs.BuildingType.PORT else 36):
+		for dx in range(-radius,radius+1):
+			for dz in range(-radius,radius+1):
+				if maxi(absi(dx),absi(dz))!=radius:continue
 				var x: int = floori(center.x)+dx;var z: int = floori(center.z)+dz
 				if not game.grid_manager.is_area_buildable(x,z,fp.x,fp.y,false):continue
 				# Keep one-cell lanes between construction sites.
@@ -179,7 +208,7 @@ func find_site(type: BuildingConfigs.BuildingType) -> Vector2i:
 func _spawn_night_attack(buildings: Array[Building]) -> void:
 	var camp: Building
 	for b in buildings:
-		if b.building_type==BuildingConfigs.BuildingType.CAMPFIRE:camp=b;break
+		if b.building_type==BuildingConfigs.BuildingType.CAMPFIRE and (camp==null or b.position.distance_squared_to(center)<camp.position.distance_squared_to(center)):camp=b
 	if not camp:return
 	for i in range(mini(24,3+last_raid_day*2)):
 		var spawn: Vector3 = game.grid_manager.find_free_position(center+Vector3(0,0,-34-i))
@@ -187,3 +216,24 @@ func _spawn_night_attack(buildings: Array[Building]) -> void:
 		RaidSystem.scale_enemy(enemy,last_raid_day)
 		enemy.set_meta("goblin_raid",true);enemy.target=camp;enemy.current_order=UnitConfigs.UnitOrder.ATTACK
 		enemy.set_path(game.grid_manager.find_path(enemy.position,camp.position,"enemy"));enemy.state=UnitConfigs.UnitState.MOVING
+
+func _plan_equipment(buildings: Array[Building],workers: Array[Unit]) -> void:
+	if not game.workshop_system:return
+	var wanted: Dictionary={}
+	var local_workers: int=workers.filter(func(u):return u.position.distance_squared_to(center)<10000).size()
+	var worker_goal: int=10 if buildings.any(func(b):return b.building_type==BuildingConfigs.BuildingType.BARRACKS and b.is_constructed) else 6
+	if local_workers<worker_goal:wanted["axe"]=1
+	wanted["pitchfork"]=buildings.filter(func(b):return b.building_type==BuildingConfigs.BuildingType.FARM and not b.farm_equipped).size()
+	if buildings.any(func(b):return b.building_type==BuildingConfigs.BuildingType.MINE):wanted["pickaxe"]=maxi(0,(2 if local_workers>=7 else 1)-workers.filter(func(u):return u.get_meta("mining_tool",false)).size())
+	var reserve: int=0
+	var needed: Variant=_next_building(buildings,own_units().size())
+	var soldiers: int=own_units().filter(func(u):return not UnitConfigs.is_worker(u.unit_type) and not UnitConfigs.is_vessel(u.unit_type)).size()
+	if soldiers>=4 and needed!=null:reserve=BuildingConfigs.get_config(needed).cost.get("wood",0)
+	if soldiers>=5 and buildings.any(func(b):return b.building_type==BuildingConfigs.BuildingType.PORT and b.is_constructed) and not own_units().any(func(u):return UnitConfigs.is_vessel(u.unit_type)):reserve=maxi(reserve,110)
+	for key in EquipmentConfigs.required(ARMY[army_cursor%ARMY.size()]):
+		if FactionEconomy.resources("goblin").wood-EquipmentConfigs.ITEMS[key].cost.wood>=reserve:wanted[key]=1
+	for key in wanted:
+		if FactionEconomy.resources("goblin").get(key,0)+game.workshop_system.queued("goblin",key)>=wanted[key]:continue
+		for b in buildings:
+			if b.building_type==BuildingConfigs.BuildingType.WORKSHOP and b.is_constructed and b.crafting_queue.size()<3:
+				game.workshop_system.enqueue(b,key);break
