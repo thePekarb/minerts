@@ -77,7 +77,6 @@ jobs:
           echo "=== Building with Real Xcode on GitHub Runner ==="
           cd "minerts 3D/builds/iOS"
           
-          # Build target without code signing requirement (for sideloading via Sideloadly / AltStore / TrollStore)
           xcodebuild -project minerts_ios.xcodeproj \
                      -scheme minerts_ios \
                      -sdk iphoneos \
@@ -87,6 +86,8 @@ jobs:
                      CODE_SIGNING_ALLOWED=NO \
                      CODE_SIGNING_REQUIRED=NO \
                      CODE_SIGN_IDENTITY="" \
+                     IPHONEOS_DEPLOYMENT_TARGET=18.0 \
+                     OTHER_LDFLAGS='$(inherited) -weak_framework QuartzCore -weak_framework Metal -Wl,-U,_CADynamicRangeAutomatic -Wl,-U,_CADynamicRangeConstrainedHigh -Wl,-U,_CADynamicRangeHigh -Wl,-U,_CADynamicRangeStandard -Wl,-U,_MTLTensorDomain' \
                      clean build
 
           # Verify built .app
