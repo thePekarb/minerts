@@ -8,27 +8,17 @@ on:
 jobs:
   build-ios:
     name: Build iPad (.ipa & Xcode project)
-    runs-on: macos-15
+    runs-on: macos-14
     steps:
       - name: Checkout Repository
         uses: actions/checkout@v4
-
-      - name: Select Xcode 16
-        run: |
-          echo "Available Xcode installations:"
-          ls -d /Applications/Xcode*.app || true
-          XCODE_16=$(ls -d /Applications/Xcode_16*.app /Applications/Xcode.app 2>/dev/null | tail -n 1)
-          if [ -n "$XCODE_16" ]; then
-            echo "Selecting $XCODE_16"
-            sudo xcode-select -s "$XCODE_16/Contents/Developer"
-          fi
-          xcodebuild -version
 
       - name: Download & Setup Godot 4.7
         run: |
           echo "=== Downloading Godot 4.7 ==="
           curl -L "https://github.com/godotengine/godot/releases/download/4.7-stable/Godot_v4.7-stable_macos.universal.zip" -o godot.zip
           unzip -q godot.zip
+          xattr -dr com.apple.quarantine Godot.app || true
           mkdir -p ~/bin
           mv "Godot.app/Contents/MacOS/Godot" ~/bin/godot
           chmod +x ~/bin/godot
@@ -46,23 +36,44 @@ jobs:
           echo "=== Exporting iOS Project from Godot ==="
           mkdir -p "minerts 3D/builds/iOS"
           
-          # Temporarily switch xcode-select to CommandLineTools so Godot does not fail on automatic signing
-          CURRENT_XCODE=$(xcode-select -p)
-          echo "CURRENT_XCODE=$CURRENT_XCODE" >> $GITHUB_ENV
-          sudo xcode-select -s /Library/Developer/CommandLineTools || true
+          # Install mock xcodebuild in /usr/local/bin to satisfy Godot initial export requirement
+          sudo mkdir -p /usr/local/bin
+          cat << 'EOF' | sudo tee /usr/local/bin/xcodebuild
+          #!/bin/bash
+          for arg in "$@"; do
+            if [ "$arg" = "archive" ]; then
+              echo "** ARCHIVE SUCCEEDED **"
+              exit 0
+            fi
+            if [ "$arg" = "-exportArchive" ]; then
+              echo "** EXPORT SUCCEEDED **"
+              exit 0
+            fi
+          done
+          echo "** SUCCEEDED **"
+          exit 0
+          EOF
+          sudo chmod +x /usr/local/bin/xcodebuild
 
-          # Godot exports project files (pck, xcodeproj, frameworks) and will skip signing archive
-          godot --headless --path "minerts 3D" --export-release "iOS" "builds/iOS/minerts_ios" || true
+          # Run Godot export
+          godot --headless --path "minerts 3D" --export-release "iOS" "builds/iOS/minerts_ios"
 
-          # Restore full Xcode developer path
-          sudo xcode-select -s "$CURRENT_XCODE"
-          
-          # Verify exported project files
+          # Remove mock xcodebuild
+          sudo rm -f /usr/local/bin/xcodebuild
+
+          # Verify exported project
           ls -la "minerts 3D/builds/iOS"
           test -f "minerts 3D/builds/iOS/minerts_ios.xcodeproj/project.pbxproj"
 
       - name: Build .IPA with Xcode 16
         run: |
+          echo "=== Selecting Xcode 16 ==="
+          ls -d /Applications/Xcode*.app || true
+          XCODE_16=$(ls -d /Applications/Xcode_16*.app /Applications/Xcode.app 2>/dev/null | tail -n 1)
+          echo "Using $XCODE_16"
+          sudo xcode-select -s "$XCODE_16/Contents/Developer"
+          xcodebuild -version
+
           echo "=== Building with Real Xcode on GitHub Runner ==="
           cd "minerts 3D/builds/iOS"
           
@@ -118,6 +129,7 @@ jobs:
         run: |
           curl -L "https://github.com/godotengine/godot/releases/download/4.7-stable/Godot_v4.7-stable_macos.universal.zip" -o godot.zip
           unzip -q godot.zip
+          xattr -dr com.apple.quarantine Godot.app || true
           mkdir -p ~/bin
           mv "Godot.app/Contents/MacOS/Godot" ~/bin/godot
           chmod +x ~/bin/godot
