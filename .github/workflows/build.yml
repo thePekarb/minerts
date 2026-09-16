@@ -35,54 +35,54 @@ jobs:
           echo "=== Exporting iOS Project from Godot ==="
           mkdir -p "minerts 3D/builds/iOS"
           
-          # Setup mock xcodebuild to satisfy Godot initial export step
-          mkdir -p /tmp/mock_bin
-          cat << 'EOF' > /tmp/mock_bin/xcodebuild
-          #!/bin/bash
-          for arg in "$@"; do
-            if [ "$arg" = "archive" ]; then
-              echo "** ARCHIVE SUCCEEDED **"
-              exit 0
-            fi
-            if [ "$arg" = "-exportArchive" ]; then
-              echo "** EXPORT SUCCEEDED **"
-              exit 0
-            fi
-          done
-          echo "** SUCCEEDED **"
-          exit 0
-          EOF
-          chmod +x /tmp/mock_bin/xcodebuild
+          # Temporarily switch xcode-select to CommandLineTools so Godot does not fail on automatic signing
+          ORIG_XCODE=$(xcode-select -p)
+          echo "ORIG_XCODE=$ORIG_XCODE" >> $GITHUB_ENV
+          sudo xcode-select -s /Library/Developer/CommandLineTools || true
 
-          PATH="/tmp/mock_bin:$PATH" godot --headless --path "minerts 3D" --export-release "iOS" "builds/iOS/minerts_ios"
+          # Godot exports project files (pck, xcodeproj, frameworks) and will skip signing archive
+          godot --headless --path "minerts 3D" --export-release "iOS" "builds/iOS/minerts_ios" || true
+
+          # Restore full Xcode developer path
+          sudo xcode-select -s "$ORIG_XCODE"
+          
+          # Verify exported project files
+          ls -la "minerts 3D/builds/iOS"
+          test -f "minerts 3D/builds/iOS/minerts_ios.xcodeproj/project.pbxproj"
 
       - name: Build .IPA with macOS-14 Xcode
         run: |
           echo "=== Building with Real Xcode on GitHub Runner ==="
           cd "minerts 3D/builds/iOS"
           
-          # Build target with unsigned configuration for sideloading
+          # Build target without code signing requirement (for sideloading via Sideloadly / AltStore / TrollStore)
           xcodebuild -project minerts_ios.xcodeproj \
                      -scheme minerts_ios \
                      -sdk iphoneos \
                      -configuration Release \
-                     -destination generic/platform=ios \
+                     -destination "generic/platform=iOS" \
+                     -derivedDataPath build_output \
                      CODE_SIGNING_ALLOWED=NO \
                      CODE_SIGNING_REQUIRED=NO \
                      CODE_SIGN_IDENTITY="" \
                      clean build
 
-          # Find the compiled .app
-          BUILD_DIR=$(xcodebuild -project minerts_ios.xcodeproj -scheme minerts_ios -sdk iphoneos -configuration Release -showBuildSettings | grep -m 1 TARGET_BUILD_DIR | awk -F ' = ' '{print $2}')
-          echo "Target build directory: $BUILD_DIR"
+          # Verify built .app
+          APP_PATH="build_output/Build/Products/Release-iphoneos/minerts_ios.app"
+          if [ ! -d "$APP_PATH" ]; then
+            echo "Searching for built .app..."
+            APP_PATH=$(find build_output -name "*.app" | head -n 1)
+          fi
+          echo "Built application: $APP_PATH"
+          ls -lh "$APP_PATH"
           
-          # Create IPA package
+          # Package into standard .ipa
           mkdir -p Payload
-          cp -r "$BUILD_DIR/minerts_ios.app" Payload/
+          cp -r "$APP_PATH" Payload/
           zip -r -q minerts_ipad.ipa Payload
           ls -lh minerts_ipad.ipa
 
-      - name: Upload iPad .IPA
+      - name: Upload iPad .IPA Package
         uses: actions/upload-artifact@v4
         with:
           name: minerts-ipad-ipa
